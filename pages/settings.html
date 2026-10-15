@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gallery Settings · SDCodex</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+  background: "#0f131c", surface: "#0f131c", "surface-container-lowest": "#0a0e17",
+  "surface-container-low": "#181b25", "surface-container": "#1c1f29",
+  "surface-container-high": "#262a34", "surface-container-highest": "#31353f",
+  "slate-surface": "#1E293B", "slate-bg": "#0F172A",
+  "badge-checkpoint": "#6366F1", "badge-sdxl": "#06B6D4", "badge-lora": "#8B5CF6", "badge-flux": "#EC4899",
+  primary: "#c0c1ff", secondary: "#4cd7f6", tertiary: "#d0bcff",
+  "status-active": "#10B981", "status-warning": "#F59E0B", "status-alert": "#EF4444",
+  "on-surface": "#dfe2ef", "on-surface-variant": "#c7c4d7", outline: "#908fa0", "outline-variant": "#464554"
+}, fontFamily: { display: ["Geist"], body: ["Inter"], mono: ["JetBrains Mono"] } } } };
+</script>
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; font-size: 18px; line-height: 1; display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body class="bg-background text-on-surface antialiased p-4 md:p-6 font-body">
+<div class="mx-auto max-w-3xl flex flex-col gap-6">
+
+  <nav class="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
+    <span class="flex items-center gap-2 text-white font-semibold mr-2">
+      <span class="material-symbols-outlined text-badge-sdxl">tune</span>
+      SDCodex-Gallery Settings
+    </span>
+    <span class="text-ink-faint">· Disk &amp; Metadata Configuration</span>
+  </nav>
+
+  <div class="rounded-xl border border-outline-variant/30 bg-surface-container-low p-5 flex flex-col gap-5 shadow-sm">
+    <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+      <div>
+        <h2 class="font-display font-semibold text-white text-base">Browse Root &amp; Directory Paths</h2>
+        <p class="font-mono text-xs text-outline mt-0.5">Where the gallery looks for images, sidecars, and embedded workflows on disk.</p>
+      </div>
+      <span class="rounded bg-badge-checkpoint/20 text-badge-checkpoint border border-badge-checkpoint/30 px-2 py-0.5 font-mono text-[10px]">GALLERY_ROOT</span>
+    </div>
+
+    <div class="flex flex-col gap-3 font-mono text-xs">
+      <div>
+        <label class="text-[10px] uppercase text-outline block mb-1">Active Root Path (Direct IO)</label>
+        <div class="flex items-center gap-2">
+          <input id="cfg-root" type="text" class="flex-1 rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-white focus:outline-none focus:border-badge-checkpoint" readonly/>
+          <button id="btn-status-refresh" class="px-3 py-2 rounded-lg bg-surface-container-high hover:bg-slate-surface border border-outline-variant/40 text-on-surface flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">refresh</span>
+            <span>Check</span>
+          </button>
+        </div>
+        <p class="text-[10px] text-outline mt-1">Configured via environment variable <code>GALLERY_ROOT</code> or Settings &rarr; Plugins volume mounts.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <div class="p-3 rounded-lg border border-outline-variant/20 bg-surface-container-lowest">
+          <span class="text-outline text-[10px] uppercase block mb-1">Status</span>
+          <span id="cfg-status-pill" class="text-status-active font-semibold flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-status-active"></span> Online / Mounted
+          </span>
+        </div>
+        <div class="p-3 rounded-lg border border-outline-variant/20 bg-surface-container-lowest">
+          <span class="text-outline text-[10px] uppercase block mb-1">Total Indexed Media</span>
+          <span id="cfg-media-count" class="text-white font-semibold">0 files</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-outline-variant/30 bg-surface-container-low p-5 flex flex-col gap-4 shadow-sm">
+    <div class="border-b border-outline-variant/20 pb-3">
+      <h2 class="font-display font-semibold text-white text-base">Metadata &amp; Cache Options</h2>
+      <p class="font-mono text-xs text-outline mt-0.5">Control how image prompt metadata and ComfyUI graphs are indexed.</p>
+    </div>
+
+    <div class="space-y-3 font-mono text-xs">
+      <div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/60 border border-outline-variant/20">
+        <div>
+          <span class="text-white block font-semibold">Direct Inode Cache</span>
+          <span class="text-outline text-[11px]">Keep image dimensions and metadata cached in memory to speed up browsing.</span>
+        </div>
+        <button id="btn-clear-cache" class="px-3 py-1.5 rounded bg-surface-container-high hover:bg-slate-surface text-primary border border-outline-variant/40">
+          Clear Cache
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/60 border border-outline-variant/20">
+        <div>
+          <span class="text-white block font-semibold">ComfyCaption Bridge</span>
+          <span class="text-outline text-[11px]">When ComfyCaption is installed, enables one-click vision captioning right from the Inspector.</span>
+        </div>
+        <span class="rounded bg-status-active/15 text-status-active px-2 py-0.5 text-[10px] border border-status-active/30">Enabled</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function() {
+  const rootInput = document.getElementById('cfg-root');
+  const statusPill = document.getElementById('cfg-status-pill');
+  const mediaCount = document.getElementById('cfg-media-count');
+  const btnRefresh = document.getElementById('btn-status-refresh');
+  const btnClearCache = document.getElementById('btn-clear-cache');
+
+  async function load() {
+    try {
+      const res = await fetch('/gallery/api/status');
+      if (res.ok) {
+        const d = await res.json();
+        rootInput.value = d.root || '';
+        mediaCount.textContent = `${d.total_files || 0} files (${d.total_folders || 0} folders)`;
+        if (d.exists) {
+          statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-status-active"></span> Online / Mounted';
+          statusPill.className = 'text-status-active font-semibold flex items-center gap-1';
+        } else {
+          statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-status-warning"></span> Path Missing';
+          statusPill.className = 'text-status-warning font-semibold flex items-center gap-1';
+        }
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  btnRefresh.addEventListener('click', load);
+  btnClearCache.addEventListener('click', async () => {
+    try {
+      btnClearCache.textContent = 'Clearing...';
+      await fetch('/gallery/api/rescan', { method: 'POST' });
+      btnClearCache.textContent = 'Cleared!';
+      setTimeout(() => { btnClearCache.textContent = 'Clear Cache'; }, 1500);
+      load();
+    } catch(e) {
+      alert('Failed: ' + e.message);
+      btnClearCache.textContent = 'Clear Cache';
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

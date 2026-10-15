@@ -1,0 +1,31 @@
+{
+  "id": "gallery",
+  "name": "SDCodex Gallery",
+  "version": "2.0.0",
+  "description": "Disk-backed media gallery and workflow inspector. Scans folders directly, reads captions/.txt sidecars, SD prompts, and ComfyUI workflows from image metadata.",
+  "author": "LainStable",
+  "repository": "https://github.com/LainStable/SDCodex-Gallery",
+  "icon": "photo_library",
+  "nav_items": [
+    {
+      "label": "Browser",
+      "icon": "photo_library",
+      "page": "gallery"
+    }
+  ],
+  "settings": [
+    {
+      "label": "Gallery",
+      "page": "settings"
+    }
+  ],
+  "volumes": [
+    {
+      "env_var": "GALLERY_ROOT",
+      "host_path": "./downloads",
+      "container_path": "/data/downloads",
+      "description": "Root folder that the gallery browses on disk (media, captions and metadata are read directly from here)."
+    }
+  ],
+  "entrypoint": "plugin:init_plugin"
+}
