@@ -47,7 +47,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   <nav class="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
     <span class="flex items-center gap-2 text-white font-semibold mr-2">
       <span class="material-symbols-outlined text-badge-sdxl" style="font-variation-settings:'FILL' 1;">photo_library</span>
-      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.3</span>
+      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.4</span>
     </span>
     <span class="text-ink-faint">· Disk Media &amp; Workflow Browser</span>
   </nav>
@@ -57,7 +57,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     <div class="flex items-center gap-2 font-mono text-[11px]">
       <span class="material-symbols-outlined text-secondary text-[18px]">photo_library</span>
       <strong class="font-display text-sm">SDCodex-Gallery</strong>
-      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.3 · DISK-BACKED</span>
+      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.4 · DISK-BACKED</span>
       <span class="hidden xl:inline text-outline">GALLERY_ROOT: <code id="header-root-path" class="text-secondary">/data/downloads</code></span>
       <span class="hidden xl:inline-flex items-center gap-1 text-status-active"><span class="h-1.5 w-1.5 rounded-full bg-status-active"></span>Zero Database Mode: Direct IO</span>
     </div>
@@ -844,7 +844,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     dom.btnBulkCaption.querySelector('span:last-child').textContent = 'Starting…';
     try {
       const prefs = await captionSettings();
-      const response = await fetch('/comfy-caption/api/caption', {
+      const response = await fetch('/comfy-caption/api/batch/start', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...prefs, folderPath, mode }),
       });
