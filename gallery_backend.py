@@ -74,9 +74,12 @@ def resolve_browse_root():
 
 
 def is_safe_path(base, target):
-    resolved_base = os.path.abspath(base)
-    resolved_target = os.path.abspath(target)
-    return resolved_target == resolved_base or resolved_target.startswith(resolved_base + os.sep)
+    resolved_base = os.path.realpath(base)
+    resolved_target = os.path.realpath(target)
+    try:
+        return os.path.commonpath((resolved_base, resolved_target)) == resolved_base
+    except ValueError:
+        return False
 
 
 def resolve_file(relpath):
