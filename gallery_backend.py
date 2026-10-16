@@ -9,7 +9,7 @@ import tempfile
 import time
 import zipfile
 from urllib.parse import unquote
-from flask import Blueprint, Response, jsonify, request, send_file
+from flask import Blueprint, Response, jsonify, request, send_file, send_from_directory
 from PIL import Image, ImageSequence
 
 try:
@@ -36,8 +36,72 @@ _meta_cache = {}  # (path, mtime) -> dict
 _thumb_cache_dir = None
 
 
+@gallery_bp.get("/legacy-ui/<path:filename>")
+def legacy_ui_asset(filename):
+    """Serve the previous FolderFrame gallery layout and its static assets."""
+    return send_from_directory(os.path.join(_plugin_dir(), "legacy-ui"), filename)
+
+
 def _plugin_dir():
     return os.path.dirname(os.path.abspath(__file__))
+
+
+def _folderframe_listing(root, target):
+    import html
+    from urllib.parse import quote
+
+    rel = os.path.relpath(target, root)
+    rel = "" if rel == "." else rel.replace(os.sep, "/").strip("/") + "/"
+    rows = []
+    try:
+        entries = sorted(os.scandir(target), key=lambda entry: (not entry.is_dir(), entry.name.casefold()))
+    except OSError:
+        entries = []
+    for entry in entries:
+        if entry.name.startswith("."):
+            continue
+        suffix = "/" if entry.is_dir(follow_symlinks=False) else ""
+        href = quote(entry.name, safe="") + suffix
+        rows.append(f'<li><a href="{href}">{html.escape(entry.name)}{suffix}</a></li>')
+    title = html.escape("/" + rel)
+    return (
+        '<!doctype html><meta charset="utf-8"><title>Gallery folders</title>'
+        f'<h1>{title}</h1><ul>{"".join(rows)}</ul>'
+    )
+
+
+@gallery_bp.get("/folderframe.config.json")
+def folderframe_config():
+    return jsonify({
+        "sources": [{"id": "media", "label": "Media", "path": "/gallery/api/browse/", "discoveryMode": "directory"}],
+        "defaults": {"source": "media", "album": "", "view": "folders", "sort": "filename", "interval": 5, "imageMode": "fit", "shuffle": False, "autoRefresh": True, "tvMode": False, "autoplay": False, "controls": True, "showFilenames": True, "showDownloadButton": True, "showCopyButton": True},
+        "index": {"refreshInterval": 120},
+        "embed": {"refreshInterval": 300, "rememberPreferences": False},
+    })
+
+
+@gallery_bp.get("/optimize-status")
+def optimize_status_compat():
+    # The old gallery UI polls this endpoint while an optimize task is active.
+    # The current optimizer reports progress in its POST response instead.
+    return jsonify({"running": False, "status": "idle"})
+
+
+@gallery_bp.get("/browse/")
+@gallery_bp.get("/browse/<path:relpath>")
+def folderframe_browse(relpath=""):
+    root = resolve_browse_root()
+    target = os.path.abspath(os.path.join(root, unquote(relpath)))
+    if not is_safe_path(root, target):
+        return "Forbidden", 403
+    if os.path.isdir(target):
+        return Response(_folderframe_listing(root, target), mimetype="text/html")
+    if os.path.isfile(target):
+        mime, _ = mimetypes.guess_type(target)
+        response = send_file(target, mimetype=mime or "application/octet-stream")
+        response.headers["Content-Disposition"] = "inline"
+        return response
+    return "Not found", 404
 
 
 def _workspace_root():

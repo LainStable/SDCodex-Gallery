@@ -1,999 +1,341 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Gallery — Browser · SDCodex</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-tailwind.config = { darkMode: "class", theme: { extend: { colors: {
-  background: "#0f131c", surface: "#0f131c", "surface-container-lowest": "#0a0e17",
-  "surface-container-low": "#181b25", "surface-container": "#1c1f29",
-  "surface-container-high": "#262a34", "surface-container-highest": "#31353f",
-  "slate-surface": "#1E293B", "slate-bg": "#0F172A",
-  "badge-checkpoint": "#6366F1", "badge-sdxl": "#06B6D4", "badge-lora": "#8B5CF6", "badge-flux": "#EC4899",
-  primary: "#c0c1ff", secondary: "#4cd7f6", tertiary: "#d0bcff",
-  "status-active": "#10B981", "status-warning": "#F59E0B", "status-alert": "#EF4444",
-  "on-surface": "#dfe2ef", "on-surface-variant": "#c7c4d7", outline: "#908fa0", "outline-variant": "#464554"
-}, fontFamily: { display: ["Geist"], body: ["Inter"], mono: ["JetBrains Mono"] } } } };
-</script>
-<style>
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; font-size: 18px; line-height: 1; display: inline-block; vertical-align: middle; }
-.scroll-thin::-webkit-scrollbar { width: 5px; height: 5px; }
-.scroll-thin::-webkit-scrollbar-track { background: #0a0e17; }
-.scroll-thin::-webkit-scrollbar-thumb { background: #31353f; border-radius: 4px; }
-.gdl-page { max-width: 100%; overflow-x: clip; }
-.gdl-page [class*="col-span"] { min-width: 0; }
-.gdl-page img { max-width: 100%; }
-.checkered-grid {
-  background-image: 
-    linear-gradient(45deg, #181b25 25%, transparent 25%), 
-    linear-gradient(-45deg, #181b25 25%, transparent 25%), 
-    linear-gradient(45deg, transparent 75%, #181b25 75%), 
-    linear-gradient(-45deg, transparent 75%, #181b25 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
-  background-color: #0d111a;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
+    <title>FolderFrame</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rhodium+Libre&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/gallery/api/legacy-ui/styles.css?v=20260906-optimize-progress">
 </head>
-<body class="bg-background text-on-surface antialiased min-h-screen font-body selection:bg-badge-checkpoint/30 selection:text-white">
-<div class="gdl-page mx-auto max-w-full p-4 md:p-6 flex flex-col gap-4">
-
-  <nav class="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
-    <span class="flex items-center gap-2 text-white font-semibold mr-2">
-      <span class="material-symbols-outlined text-badge-sdxl" style="font-variation-settings:'FILL' 1;">photo_library</span>
-      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.4</span>
-    </span>
-    <span class="text-ink-faint">· Disk Media &amp; Workflow Browser</span>
-  </nav>
-
-  <!-- Subheader -->
-  <div class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
-    <div class="flex items-center gap-2 font-mono text-[11px]">
-      <span class="material-symbols-outlined text-secondary text-[18px]">photo_library</span>
-      <strong class="font-display text-sm">SDCodex-Gallery</strong>
-      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.4 · DISK-BACKED</span>
-      <span class="hidden xl:inline text-outline">GALLERY_ROOT: <code id="header-root-path" class="text-secondary">/data/downloads</code></span>
-      <span class="hidden xl:inline-flex items-center gap-1 text-status-active"><span class="h-1.5 w-1.5 rounded-full bg-status-active"></span>Zero Database Mode: Direct IO</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <button id="btn-rescan" class="rounded border border-outline-variant/40 bg-slate-surface px-2.5 py-1 font-mono text-[11px] flex items-center gap-1.5 hover:text-white transition-all">
-        <span class="material-symbols-outlined text-[15px] text-primary">cached</span>
-        <span>Rescan Directory</span>
-      </button>
-      <button id="btn-open-lightbox-top" class="rounded border border-badge-checkpoint bg-badge-checkpoint/20 px-2.5 py-1 font-mono text-[11px] font-semibold text-primary flex items-center gap-1.5 hover:bg-badge-checkpoint/30 transition-all">
-        <span class="material-symbols-outlined text-[15px]">open_in_new</span>
-        <span>Open Lightbox Viewer</span>
-      </button>
-      <button id="btn-filter-starred" aria-pressed="false" class="rounded border border-outline-variant/40 bg-slate-surface px-2.5 py-1 font-mono text-[11px] text-on-surface flex items-center gap-1.5 hover:text-white transition-all"><span class="material-symbols-outlined text-[15px]">star</span><span>Starred</span></button>
-      <button id="btn-auto-refresh" aria-pressed="false" class="rounded border border-outline-variant/40 bg-slate-surface px-2.5 py-1 font-mono text-[11px] text-on-surface hover:text-white transition-all">Auto refresh: off</button>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-    <!-- Folder tree left pane -->
-    <aside class="col-span-1 xl:col-span-3 min-w-0 rounded-xl border border-outline-variant/30 bg-surface-container-low overflow-hidden shadow-md">
-      <div class="px-3 py-2 border-b border-outline-variant/20 bg-surface-container-lowest/50 flex items-center justify-between">
-        <span class="font-mono text-[10px] uppercase text-outline">Album Folders</span>
-        <span id="folder-total-items-badge" class="font-mono text-[11px] rounded bg-surface-container-highest px-2 py-0.5 text-on-surface-variant">0 items</span>
-      </div>
-      
-      <div id="folder-list-container" class="p-2 space-y-1 font-mono text-xs max-h-[380px] overflow-y-auto scroll-thin">
-        <div class="px-2 py-1 flex items-center gap-1 text-outline truncate"><span class="material-symbols-outlined text-[14px]">storage</span><span id="aside-root-label">Loading...</span></div>
-        <div class="p-4 text-center text-outline font-mono text-xs">Scanning folders...</div>
-      </div>
-
-      <div class="p-3 border-t border-outline-variant/30 bg-surface-container-lowest/60 flex flex-col gap-2.5">
-        <div class="flex items-center justify-between">
-          <span class="font-mono text-[10px] uppercase text-outline">Filter &amp; Sort</span>
-          <button id="btn-reset-filters" class="font-mono text-[11px] text-primary hover:underline">Reset</button>
-        </div>
-        <div class="space-y-1.5">
-          <label class="flex items-center gap-2 font-mono text-[11px] text-ink-muted cursor-pointer hover:text-white">
-            <input id="filter-workflow" type="checkbox" class="rounded border-outline-variant/40 bg-surface-container accent-[#6366f1] text-badge-checkpoint focus:ring-0 w-3.5 h-3.5"/>
-            <span>Has Workflow (.json)</span>
-          </label>
-          <label class="flex items-center gap-2 font-mono text-[11px] text-ink-muted cursor-pointer hover:text-white">
-            <input id="filter-sidecar" type="checkbox" class="rounded border-outline-variant/40 bg-surface-container accent-[#6366f1] text-badge-checkpoint focus:ring-0 w-3.5 h-3.5"/>
-            <span>Has .txt Sidecar</span>
-          </label>
-          <label class="flex items-center gap-2 font-mono text-[11px] text-ink-muted cursor-pointer hover:text-white">
-            <input id="filter-4k" type="checkbox" class="rounded border-outline-variant/40 bg-surface-container accent-[#6366f1] text-badge-checkpoint focus:ring-0 w-3.5 h-3.5"/>
-            <span>Minimum 4K resolution</span>
-          </label>
-        </div>
-        <div class="pt-2 border-t border-outline-variant/20 flex flex-col gap-1.5">
-          <button id="btn-bulk-caption" class="w-full flex items-center justify-center gap-1.5 py-1.5 bg-slate-surface hover:bg-slate-surface/80 border border-outline-variant/40 rounded font-mono text-[11px] text-on-surface transition-all">
-            <span class="material-symbols-outlined text-[15px] text-badge-sdxl">batch_prediction</span>
-            <span>Bulk Caption via ComfyCaption</span>
-          </button>
-          <button id="btn-export-zip" class="w-full flex items-center justify-center gap-1.5 py-1.5 bg-slate-surface hover:bg-slate-surface/80 border border-outline-variant/40 rounded font-mono text-[11px] text-on-surface transition-all">
-            <span class="material-symbols-outlined text-[15px] text-secondary">folder_zip</span>
-            <span>Export Workflows as ZIP</span>
-          </button>
-          <div class="grid grid-cols-2 gap-1.5">
-            <button id="btn-optimize-folder" class="py-1.5 bg-slate-surface hover:bg-slate-surface/80 border border-outline-variant/40 rounded font-mono text-[10px] text-on-surface">Optimize Folder</button>
-            <button id="btn-convert-folder" class="py-1.5 bg-slate-surface hover:bg-slate-surface/80 border border-outline-variant/40 rounded font-mono text-[10px] text-on-surface">Convert Folder</button>
-          </div>
-          <span id="folder-action-status" class="min-h-4 font-mono text-[10px] text-outline"></span>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Media grid center area -->
-    <section class="col-span-1 xl:col-span-9 min-w-0 flex flex-col">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-outline-variant/20">
-        <div class="flex items-center gap-2">
-          <span id="current-folder-title" class="font-display font-semibold text-white">/ All Media</span>
-          <span id="current-folder-count-badge" class="rounded-full bg-surface-container-high border border-outline-variant/30 px-2 py-0.5 font-mono text-[10px] text-outline">0 Media Files</span>
-          <span class="rounded-full bg-status-active/10 text-status-active border border-status-active/30 px-2 py-0.5 font-mono text-[10px]">Live Inode Stream</span>
-        </div>
-        <label class="font-mono text-[11px] text-outline flex items-center gap-2">
-          <span>Sort:</span>
-          <select id="select-sort" class="bg-surface-container border border-outline-variant/40 rounded px-2 py-1 text-[11px] text-on-surface focus:outline-none focus:border-badge-checkpoint">
-            <option value="date_desc">Date Added (Newest)</option>
-            <option value="date_asc">Date Added (Oldest)</option>
-            <option value="size_desc">File Size (Largest)</option>
-            <option value="name_asc">Name (A-Z)</option>
-          </select>
-        </label>
-      </div>
-
-      <!-- Media Grid -->
-      <div id="media-grid" class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 min-h-[300px]">
-        <div class="col-span-full p-12 text-center text-outline font-mono text-xs rounded-xl border border-outline-variant/20 bg-surface-container-lowest/50">
-          Loading media from disk...
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- FLOATING LIGHTBOX VIEWER PANEL -->
-  <div id="lightbox" class="hidden fixed inset-0 z-[70] bg-black/75 backdrop-blur-md p-3 md:p-6 flex items-center justify-center">
-    <div class="w-full max-w-7xl h-[92vh] rounded-2xl border border-outline-variant/40 bg-slate-bg/95 flex flex-col overflow-hidden shadow-2xl">
-      <!-- Top Title Bar -->
-      <div class="px-4 py-2.5 bg-surface-container-lowest/90 border-b border-outline-variant/30 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2 font-mono text-xs truncate mr-2">
-          <span class="material-symbols-outlined text-primary text-[18px]">photo_size_select_large</span>
-          <strong>Inspector:</strong>
-          <code id="lb-filename" class="text-secondary bg-surface-container-high px-2 py-0.5 rounded truncate">file.png</code>
-          <span id="lb-relpath" class="text-outline text-[11px] hidden lg:inline truncate"></span>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button id="lb-fit-btn" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Fit</button>
-          <button id="lb-100-btn" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">100%</button>
-          <button id="lb-prev" aria-label="Previous media" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">←</button>
-          <button id="lb-next" aria-label="Next media" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">→</button>
-          <button id="lb-play" aria-label="Start slideshow" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">▶ Play</button>
-          <button id="lb-shuffle" aria-pressed="false" aria-label="Shuffle slideshow" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Shuffle</button>
-          <button id="lb-fullscreen" aria-label="Toggle fullscreen" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Fullscreen</button>
-          <button id="lb-rotate" aria-label="Rotate image" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Rotate</button>
-          <button id="lb-copy-name" aria-label="Copy filename" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Copy name</button>
-          <button id="lb-copy-image" aria-label="Copy image" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Copy image</button>
-          <button id="lb-download" aria-label="Download media" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Download</button>
-          <button id="lb-close" class="w-7 h-7 rounded-lg bg-status-alert/20 text-status-alert hover:bg-status-alert/30 border border-status-alert/40 flex items-center justify-center transition-all">
-            <span class="material-symbols-outlined text-[16px]">close</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Body: Canvas Left + Details Right -->
-      <div class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
-        <!-- Canvas -->
-        <div class="flex-1 bg-surface-container-lowest/90 relative flex items-center justify-center p-4 min-h-64 overflow-auto scroll-thin">
-          <div class="relative max-h-full max-w-full flex items-center justify-center rounded overflow-hidden">
-            <img id="lb-image" class="max-h-[74vh] w-auto object-contain rounded shadow-2xl transition-all" src="" alt="Viewer"/>
-            <video id="lb-video" class="hidden max-h-[74vh] max-w-full rounded shadow-2xl" controls playsinline></video>
-            <div id="lb-image-stats" class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded text-code-sm font-mono text-[11px] text-white border border-white/10 flex items-center gap-2">
-              <span id="lb-dims">-- × --</span>
-              <span class="text-outline-variant">•</span>
-              <span id="lb-filesize">-- MB</span>
-              <span class="text-outline-variant">•</span>
-              <span id="lb-format">PNG</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Details Right Sidebar -->
-        <div class="w-full md:w-[420px] bg-slate-surface/95 border-t md:border-t-0 md:border-l border-outline-variant/30 flex flex-col shrink-0 overflow-y-auto scroll-thin">
-          <!-- Workflow Actions Top Hub -->
-          <div class="p-4 border-b border-outline-variant/20 bg-surface-container-low flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="font-mono text-[10px] uppercase text-outline">Workflow Actions</span>
-              <span id="lb-wf-indicator" class="font-mono text-[11px] text-status-active flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-status-active"></span> Embedded Graph Found
-              </span>
-            </div>
-            <button id="btn-download-wf" class="w-full flex items-center justify-center gap-2 py-2 px-3 bg-badge-checkpoint hover:bg-badge-checkpoint/90 text-white rounded-lg font-mono text-[11px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-              <span class="material-symbols-outlined text-[17px]">download_for_offline</span>
-              <span>Download ComfyUI Workflow (.json)</span>
-            </button>
-            <div class="grid grid-cols-2 gap-2">
-              <button id="btn-caption-image" class="py-1.5 px-2 border border-badge-sdxl/40 hover:bg-badge-sdxl/10 text-secondary rounded font-mono text-[11px] flex items-center justify-center gap-1">
-                <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
-                <span>Caption this Image</span>
-              </button>
-              <button id="btn-copy-sd-prompt" class="py-1.5 px-2 border border-outline-variant/40 hover:bg-surface-container-high rounded font-mono text-[11px] text-on-surface flex items-center justify-center gap-1">
-                <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                <span>Copy SD Prompt</span>
-              </button>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button id="btn-optimize-image" class="py-1.5 px-2 border border-outline-variant/40 hover:bg-surface-container-high text-on-surface rounded font-mono text-[11px]">Optimize Image</button>
-              <button id="btn-convert-image" class="py-1.5 px-2 border border-outline-variant/40 hover:bg-surface-container-high text-on-surface rounded font-mono text-[11px]">Convert Image</button>
-            </div>
-            <span id="caption-status" class="min-h-4 font-mono text-[10px] text-outline"></span>
-          </div>
-
-          <!-- Parameters & Sidecar Content -->
-          <div class="p-4 space-y-3.5 flex-1 font-mono">
-            <!-- Positive Prompt -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[10px] uppercase text-status-active flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[13px]">add_circle</span> Positive Prompt
-                </span>
-                <button id="btn-copy-pos" class="text-outline hover:text-primary" title="Copy Positive Prompt"><span class="material-symbols-outlined text-[14px]">copy_all</span></button>
-              </div>
-              <div id="lb-pos-prompt" class="p-2.5 bg-surface-container-lowest rounded-lg border border-outline-variant/30 text-[11px] text-on-surface leading-relaxed select-text max-h-36 overflow-y-auto scroll-thin">
-                (No positive prompt recorded)
-              </div>
+<body>
+    <div id="gallery-wrapper">
+        <div id="media-viewport">
+            <div id="media-container">
+                <img id="gallery-image" alt="Gallery Image" draggable="false" style="display:none;">
+                <video id="gallery-video" style="display:none;" playsinline></video>
             </div>
 
-            <!-- Negative Prompt -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[10px] uppercase text-status-alert flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[13px]">do_not_disturb_on</span> Negative Prompt
-                </span>
-                <button id="btn-copy-neg" class="text-outline hover:text-primary" title="Copy Negative Prompt"><span class="material-symbols-outlined text-[14px]">copy_all</span></button>
-              </div>
-              <div id="lb-neg-prompt" class="p-2.5 bg-surface-container-lowest rounded-lg border border-outline-variant/30 text-[11px] text-outline leading-relaxed select-text max-h-24 overflow-y-auto scroll-thin">
-                (No negative prompt recorded)
-              </div>
-            </div>
-
-            <!-- Generation Parameters -->
-            <div>
-              <span class="text-[10px] uppercase text-outline block mb-1.5">Generation Parameters</span>
-              <div class="grid grid-cols-2 gap-2 text-[11px]">
-                <div class="p-2 bg-surface-container-lowest rounded border border-outline-variant/20">
-                  <span class="text-outline block text-[9px] uppercase">Base Model</span>
-                  <span id="lb-param-model" class="text-badge-sdxl font-semibold truncate block">--</span>
+            <div id="media-loading" class="loading-note" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span><span id="media-loading-text"></span></div>
+            <div id="video-error-overlay" class="video-error-overlay" style="display:none;">
+                <div class="video-error-card">
+                    <div role="status" aria-live="polite" aria-atomic="true">
+                        <h3 id="media-error-title">Unable to open media</h3>
+                        <p id="media-error-filename"></p>
+                        <p id="video-error-text"></p>
+                        <p id="video-error-ffmpeg"></p>
+                        <p id="media-error-status"></p>
+                    </div>
+                    <div class="media-error-actions">
+                        <button id="btn-retry-media-error" class="btn btn-primary" type="button">Retry</button>
+                        <button id="btn-next-media-error" class="btn btn-secondary" type="button">Next file</button>
+                        <button id="btn-close-video-error" class="btn btn-secondary" type="button">Gallery</button>
+                        <a id="media-error-original" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Open original</a>
+                    </div>
                 </div>
-                <div class="p-2 bg-surface-container-lowest rounded border border-outline-variant/20">
-                  <span class="text-outline block text-[9px] uppercase">Sampler</span>
-                  <span id="lb-param-sampler" class="text-on-surface font-semibold truncate block">--</span>
-                </div>
-                <div class="p-2 bg-surface-container-lowest rounded border border-outline-variant/20">
-                  <span class="text-outline block text-[9px] uppercase">Steps / CFG</span>
-                  <span id="lb-param-steps" class="text-on-surface font-semibold truncate block">--</span>
-                </div>
-                <div class="p-2 bg-surface-container-lowest rounded border border-outline-variant/20">
-                  <span class="text-outline block text-[9px] uppercase">Seed</span>
-                  <span id="lb-param-seed" class="text-primary font-semibold truncate block">--</span>
-                </div>
-              </div>
             </div>
+        </div>
 
-            <!-- Sidecar (.txt) -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[10px] uppercase text-outline flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[13px]">description</span> Sidecar (.txt)
-                </span>
-                <button id="btn-save-sidecar" class="text-[10px] px-2 py-0.5 rounded bg-badge-checkpoint/20 text-primary border border-badge-checkpoint/40 hover:bg-badge-checkpoint/30">
-                  Save
+        <header id="overlay-header" class="overlay ff-header">
+            <div class="header-left ff-header-left ff-pill">
+                <button id="btn-show-grid" class="btn btn-secondary ff-btn ff-btn-icon ff-btn-home" title="Back to grid" aria-label="Back to grid">
+                    <span class="viewer-back-logo" aria-hidden="true">▦</span>
                 </button>
-              </div>
-              <textarea id="lb-sidecar-text" class="w-full h-24 p-2.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-[11px] text-on-surface resize-none focus:outline-none focus:border-badge-checkpoint" placeholder="Enter sidecar caption or notes here..."></textarea>
+                <div class="viewer-file-meta">
+                    <span id="media-title" class="title-text">Loading…</span>
+                    <span id="media-index" class="index-text"></span>
+                </div>
             </div>
-          </div>
+
+            <div class="header-right ff-header-right ff-pill">
+                <button id="btn-play-pause" class="btn btn-secondary ff-btn ff-btn-icon" title="Play/Pause slideshow" aria-label="Play/Pause slideshow">
+                    <span class="play-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span>
+                    <span class="pause-icon" style="display:none;"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></span>
+                    <span id="slideshow-text" class="button-label">Play</span>
+                </button>
+
+                <button id="btn-image-mode" class="btn btn-secondary ff-btn ff-btn-icon" title="Toggle Original Size / Fit Screen" aria-label="Image sizing: Fit" aria-pressed="false">
+                    <span class="fit-mode-icon"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 9h8v6H8z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+                    <span class="original-mode-icon" hidden><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v6h-6v-2h4v-4z"/><rect x="8" y="8" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+                    <span id="image-mode-text" class="button-label">Fit</span>
+                </button>
+
+                <button id="btn-rotate" class="btn btn-secondary ff-btn ff-btn-icon" title="Rotate photo 90° clockwise" aria-label="Rotate photo clockwise" disabled>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15.55 5.55A7 7 0 1 0 19 12h-2a5 5 0 1 1-2.87-4.52L11 10.6V3h7.6l-3.05 2.55z"/></svg>
+                    <span class="button-label">Rotate</span>
+                </button>
+
+                <button id="btn-viewer-star" class="btn btn-secondary ff-btn ff-btn-icon" title="Star this media" aria-label="Star this media" aria-pressed="false">
+                    <span class="star-off-icon"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                    <span class="star-on-icon" hidden><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span>
+                    <span class="button-label">Star</span>
+                </button>
+
+                <button id="btn-optimize" class="btn btn-secondary ff-btn ff-btn-icon" title="Optimize this image" aria-label="Optimize this image" disabled>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 3v3H3v2h7V3H8zm8 0v3h5v2h-7V3h2zM3 16h5v3h2v-7H3v4zm16 0h-5v3h-2v-7h7v4z"/></svg>
+                    <span class="button-label">Optimize</span>
+                </button>
+
+                <button id="btn-convert" class="btn btn-secondary ff-btn ff-btn-icon" title="Convert this image to another type" aria-label="Convert this image" disabled>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.99 11 3 15l3.99 4v-3H13v-2H6.99v-3zM21 9l-3.99-4v3H11v2h6.01v3L21 9z"/></svg>
+                    <span class="button-label">Convert</span>
+                </button>
+
+                <button id="btn-info" class="btn btn-secondary ff-btn ff-btn-icon" title="Show caption, SD prompt and generation info for this image" aria-label="Toggle image details" aria-pressed="false">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 6h4v2H4v4zm10 0h2v4h2v4H2v2zm2-10V14H1zm13 0h1v14H1v-14zM7 9h2v2H2v2z"/></svg>
+                    <span class="button-label">Info</span>
+                </button>
+
+                <div id="viewer-options" class="viewer-options">
+                    <button id="btn-viewer-options" class="btn btn-secondary ff-btn ff-btn-icon" type="button" aria-label="Viewer options" aria-haspopup="true" aria-expanded="false" title="Viewer options">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+                    </button>
+                    <div id="viewer-options-menu" class="viewer-options-menu" role="menu" hidden>
+                        <button id="btn-shuffle" class="btn btn-secondary ff-btn" type="button" role="menuitem" aria-pressed="false" title="Shuffle slideshow order" aria-label="Shuffle slideshow order">
+                            <span class="shuffle-on-icon" hidden><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></span>
+                            <span class="shuffle-off-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 5h11V2l5 4-5 4V7H4V5zm0 12h11v-3l5 4-5 4v-3H4v-2z"/></svg></span>
+                            <span class="button-label">Shuffle Off</span>
+                        </button>
+                        <button id="btn-reset-zoom" class="btn btn-secondary ff-btn" type="button" role="menuitem" title="Reset zoom and pan" aria-label="Reset zoom and pan" disabled>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v6h-6v-2h4v-4z"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+                            <span class="button-label">Reset Zoom</span>
+                        </button>
+                        <button id="btn-fullscreen" class="btn btn-secondary ff-btn" type="button" role="menuitem" title="Enter fullscreen" aria-label="Toggle Fullscreen" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                            <span class="button-label">Full</span>
+                        </button>
+                        <button id="btn-tv-mode" class="btn btn-secondary ff-btn" type="button" role="menuitem" aria-pressed="false" title="Start photo-frame mode" aria-label="Start photo-frame mode">
+                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H7v2h10v-2h-3v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+                            <span class="button-label">TV Mode</span>
+                        </button>
+                        <div class="timer-control">
+                            <label for="select-interval">Interval</label>
+                            <select id="select-interval" class="custom-select">
+                                <option value="3">3s</option>
+                                <option value="5">5s</option>
+                                <option value="10">10s</option>
+                                <option value="15">15s</option>
+                                <option value="30">30s</option>
+                                <option value="60">60s</option>
+                                <option value="300">5m</option>
+                                <option value="900">15m</option>
+                                <option value="3600">60m</option>
+                            </select>
+                        </div>
+                        <a id="btn-download" class="btn btn-secondary ff-btn" download rel="noopener" role="menuitem" title="Download original media">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M11 3h2v10.17l3.59-3.58L18 11l-6 6-6-6 1.41-1.41L11 13.17V3zM5 19h14v2H5v-2z"/></svg>
+                            <span class="button-label">Download</span>
+                        </a>
+                        <button id="btn-download-workflow" class="btn btn-secondary ff-btn" type="button" role="menuitem" title="Download the ComfyUI workflow embedded in this image" hidden>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 6H16v2H4V8zm0 8h12v2H3v-2zm0 10h16v2H4v-2zM18 12h-2v4H2v-4z"/></svg>
+                            <span class="button-label">Download Workflow</span>
+                        </button>
+                        <button id="btn-copy-link" class="btn btn-secondary ff-btn" type="button" role="menuitem" title="Copy displayed image" disabled>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                            <span class="button-label">Copy Image</span>
+                        </button>
+                        <button id="btn-copy-filename" class="btn btn-secondary ff-btn" type="button" role="menuitem" title="Copy filename" aria-label="Copy filename" disabled>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
+                            <span class="button-label">Copy Filename</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <button id="nav-left" class="nav-arrow" aria-label="Previous media"><svg viewBox="0 0 24 24" width="36" height="36"><path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+        <button id="nav-right" class="nav-arrow" aria-label="Next media"><svg viewBox="0 0 24 24" width="36" height="36"><path fill="currentColor" d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+
+        <div id="progress-container"><div id="progress-bar"></div></div>
+
+        <div id="grid-view-container">
+            <header id="grid-header" class="overlay ff-header header-nav-container">
+                <div class="grid-header-main header-nav ff-header-left ff-pill">
+                    <button id="btn-gallery-home" class="brand-home" type="button" aria-label="Gallery root" title="Gallery root">
+                        <span class="brand-logo">FolderFrame</span>
+                        <span class="path-group-separator" aria-hidden="true">·</span>
+                        <span id="source-root-label" class="source-root-label">Photos</span>
+                    </button>
+                    <span id="breadcrumb-root-separator" class="crumb-separator path-root-separator" aria-hidden="true" hidden>›</span>
+                    <div id="gallery-path-bar" class="gallery-path-bar" aria-label="Current gallery location">
+                        <div id="breadcrumb" class="breadcrumb" aria-label="Album path"></div>
+                        <span id="current-path-separator" class="crumb-separator" aria-hidden="true" hidden>›</span>
+                        <span id="grid-path" class="folder-path">Sorted by folder</span>
+                    </div>
+                    <div id="source-control" class="timer-control" hidden>
+                        <label for="select-source">Source:</label>
+                        <select id="select-source" class="custom-select"></select>
+                    </div>
+                </div>
+                <div class="header-right grid-actions ff-header-right ff-pill">
+                    <span id="grid-view-mode-slot" class="grid-action-slot">
+                        <button id="btn-view-mode" class="btn btn-secondary ff-btn" aria-pressed="false" title="Show all media in this folder and all subfolders">
+                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 5h8v6H3V5zm10 0h8v6h-8V5zM3 13h8v6H3v-6zm10 0h8v6h-8v-6z"/></svg>
+                            <span class="button-label">By Folder</span>
+                        </button>
+                    </span>
+                    <span id="grid-sort-slot" class="grid-action-slot">
+                        <button id="btn-sort" class="btn btn-secondary ff-btn" title="Change sorting">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 5h18v2H3V5zm0 6h12v2H3v-2zm0 6h6v2H3v-2z"/></svg>
+                            <span id="sort-label">Filename</span>
+                        </button>
+                    </span>
+                    <span id="grid-density-slot" class="grid-density-slot">
+                        <button id="btn-grid-density" class="btn btn-secondary ff-btn" title="Change thumbnail size">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"/></svg>
+                            <span id="grid-density-label">Comfortable</span>
+                        </button>
+                    </span>
+                    <span id="grid-stars-slot" class="grid-action-slot">
+                        <button id="btn-stars" class="btn btn-secondary ff-btn" aria-pressed="false" title="Show only starred media">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            <span class="button-label">Starred</span>
+                        </button>
+                    </span>
+                    <span id="grid-optimize-slot" class="grid-action-slot">
+                        <button id="btn-optimize-folder" class="btn btn-secondary ff-btn" title="Optimize all images in this folder" disabled>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 3v3H3v2h7V3H8zm8 0v3h5v2h-7V3h2zM3 16h5v3h2v-7H3v4zm16 0h-5v3h-2v-7h7v4z"/></svg>
+                            <span class="button-label">Optimize</span>
+                        </button>
+                    </span>
+                    <span id="grid-convert-slot" class="grid-action-slot">
+                        <button id="btn-convert-folder" class="btn btn-secondary ff-btn" title="Convert images in this folder to another type" disabled>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.99 11 3 15l3.99 4v-3H13v-2H6.99v-3zM21 9l-3.99-4v3H11v2h6.01v3L21 9z"/></svg>
+                            <span class="button-label">Convert</span>
+                        </button>
+                    </span>
+                    <div id="grid-options" class="viewer-options grid-options">
+                        <button id="btn-grid-options" class="btn btn-secondary ff-btn ff-btn-icon" type="button" aria-label="Gallery options" aria-haspopup="true" aria-expanded="false" title="Gallery options">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+                        </button>
+                        <div id="grid-options-menu" class="viewer-options-menu grid-options-menu" role="menu" hidden>
+                            <span id="grid-view-mode-menu-slot" class="grid-menu-slot"></span>
+                            <span id="grid-sort-menu-slot" class="grid-menu-slot"></span>
+                            <span id="grid-density-menu-slot" class="grid-density-menu-slot"></span>
+                            <span id="grid-stars-menu-slot" class="grid-menu-slot"></span>
+                            <span id="grid-optimize-menu-slot" class="grid-menu-slot"></span>
+                            <span id="grid-convert-menu-slot" class="grid-menu-slot"></span>
+                            <span id="grid-refresh-menu-slot" class="grid-menu-slot">
+                                <button id="btn-refresh-grid" class="btn btn-secondary ff-btn" type="button" role="menuitem" title="Rescan current album now" aria-label="Refresh Folder">
+                                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.07 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                    <span id="refresh-grid-label" class="button-label">Refresh Folder</span>
+                                </button>
+                            </span>
+                            <button id="btn-auto-refresh" class="btn btn-secondary ff-btn" type="button" role="menuitem" aria-pressed="true" title="Automatically rescan every 60 seconds">
+                                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 6V3l-4 4 4 4V8c2.76 0 5 2.24 5 5 0 .75-.17 1.46-.46 2.1l1.46 1.46A6.96 6.96 0 0 0 19 13c0-3.87-3.13-7-7-7zm-5.54.9L5 5.44A6.96 6.96 0 0 0 4 9c0 3.87 3.13 7 7 7v3l4-4-4-4v3c-2.76 0-5-2.24-5-5 0-.75.17-1.46.46-2.1z"/></svg>
+                                <span class="button-label">Auto Refresh On</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="grid-status-stack" role="status">
+                <span id="grid-count" class="index-text">0 Files</span>
+                <span class="grid-status-separator" aria-hidden="true">·</span>
+                <span id="scan-status" class="scan-status">Ready</span>
+            </div>
+            <div id="scan-failures" role="status" hidden><span id="scan-failure-text"></span> <button id="btn-retry-scan" class="btn btn-secondary" type="button">Retry scan</button></div>
+            <div id="scan-loading" class="scan-loading" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span><span id="scan-loading-text">Scanning folders…</span><div id="scan-progress-track" class="scan-progress-track" role="progressbar" aria-label="Folder scan progress" aria-valuemin="0" aria-valuemax="100" hidden><div id="scan-progress-fill" class="scan-progress-fill"></div></div></div>
+            <div id="thumbnail-grid"></div>
+            <button id="btn-back-to-top" class="btn btn-secondary back-to-top" type="button" hidden aria-label="Back to top">↑ Top</button>
         </div>
-      </div>
+
+        <div id="help-hint"><span>Scroll to Zoom • Drag to Pan • ←/→ Browse • Space Play/Pause • Enter Fit/Original • R Rotate • F Fullscreen • G Gallery • S Shuffle</span></div>
+
+        <div id="convert-overlay" class="warning-container" style="display:none;">
+            <div class="warning-card">
+                <h2 id="convert-title">Convert Image</h2>
+                <p id="convert-message">Choose the new image type. Only files directly in this folder are converted; subfolders are left alone, and files that already are the chosen type are skipped.</p>
+                <div class="convert-option-row">
+                    <label class="convert-format-label" for="convert-format">Convert to</label>
+                    <select id="convert-format" class="custom-select">
+                        <option value="jpg">JPEG - .jpg</option>
+                        <option value="png">PNG - .png</option>
+                        <option value="webp">WebP - .webp</option>
+                        <option value="gif">GIF - .gif</option>
+                        <option value="tiff">TIFF - .tiff</option>
+                        <option value="bmp">BMP - .bmp</option>
+                    </select>
+                </div>
+                <div class="convert-check-row">
+                    <input type="checkbox" id="convert-delete-original" class="convert-delete-checkbox">
+                    <label for="convert-delete-original">Delete original</label>
+                </div>
+                <div class="warning-actions">
+                    <button id="btn-convert-cancel" class="btn btn-secondary">Cancel</button>
+                    <button id="btn-convert-confirm" class="btn btn-primary">Convert</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="warning-overlay" class="warning-container" style="display:none;">
+            <div class="warning-card">
+                <h2 id="warning-title">No Media Detected</h2>
+                <p id="warning-message"></p>
+                <p id="warning-source-summary">Configured source: <code class="configured-source-path">photos/</code>.</p>
+                <div id="warning-server-help" class="instructions">
+                    <h3>Web Server Required</h3>
+                    <p>This gallery requires directory listing to be enabled for <code class="configured-source-path">photos/</code> and any album subfolders.</p>
+                </div>
+                <p id="warning-offline-note" class="offline-note">Opening the HTML directly with <code>file://</code> will not work because browsers cannot scan local directories.</p>
+                <div class="warning-actions">
+                    <button id="btn-retry-warning" class="btn btn-primary">Scan Again</button>
+                    <button id="btn-warning-previous" class="btn btn-secondary" hidden>Previous location</button>
+                    <button id="btn-warning-root" class="btn btn-secondary" hidden>Gallery root</button>
+                    <a id="warning-open-source" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Open source</a>
+                </div>
+            </div>
+        </div>
+
+        <aside id="info-panel" class="info-panel" aria-label="Image details" hidden>
+            <div class="info-panel-head">
+                <span class="info-panel-title">Details</span>
+                <button id="btn-info-close" class="btn btn-secondary ff-btn ff-btn-icon" type="button" aria-label="Close details" title="Close details">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M5.33 6.5l1.34 1.34L8 12.67l1.34-1.34L5.33 6.5zM13.33 6.5l-1.34 1.34L16 12.67l-1.34-1.34z"/></svg>
+                </button>
+            </div>
+            <div id="info-file-name" class="info-section info-file-name"></div>
+            <div class="info-loading" id="info-loading" role="status">Reading file metadata…</div>
+            <div class="info-section-title">Caption</div>
+            <div id="info-caption" class="info-text info-caption"></div>
+            <div class="info-section-title">SD Prompt</div>
+            <div id="info-sd-prompt" class="info-text info-sd"></div>
+            <div class="info-section-title">SD Negative Prompt</div>
+            <div id="info-sd-negative" class="info-text info-sd"></div>
+            <div class="info-section-title">Generation Info</div>
+            <div id="info-sd-setting" class="info-text info-setting"></div>
+            <div id="info-workflow-section" class="info-workflow-section" hidden>
+                <div class="info-section-title">ComfyUI Workflow</div>
+                <button id="btn-info-download-workflow" class="btn btn-secondary" type="button">Download Workflow (.json)</button>
+            </div>
+            <div id="info-error" class="info-error" hidden></div>
+            <style>
+                #info-panel { position:absolute; top:64px; right:0; bottom:0; width:min(360px, 40vw);
+                    background:rgba(5,5,5,.92); color:#eee; overflow:auto; z-index:200;
+                    box-shadow:0 0 22px rgba(0,0,0,.6); border-left:1px solid #333;
+                    padding:14px 16px; font-family:inherit; }
+                #info-panel .info-panel-head { display:flex; justify-content:space-between; align-items:center; }
+                #info-panel .info-panel-title { font-size:15px; font-weight:600; letter-spacing:.3px; }
+                #info-panel button { background:#262626; color:#eee; border:1px solid #444; border-radius:6px;}
+                #info-panel .info-section-title { margin-top:12px; font-size:11px; font-weight:600; text-transform:uppercase;
+                    letter-spacing:.5px; color:#9a9a9a; }
+                #info-panel .info-text { margin-top:4px; white-space:pre-wrap; word-break:break-word; font-size:13px; line-height:1.4; }
+                #info-panel .info-caption { color:#ddd; }
+                #info-panel .info-sd { color:#b8b8b8; font-style:italic; }
+                #info-panel .info-setting { color:#9a9a9a; font-family:ui-monospace, monospace; }
+                #info-panel .info-file-name { font-size:12px; color:#aaa; word-break:break-all; }
+                #info-panel .info-loading { color:#888; font-size:12px; padding-top:8px; }
+                #info-panel .info-error { color:#e06565; font-size:12px; margin-top:12px; }
+                #info-panel .info-workflow-section button { margin-top:6px; }
+            </style>
+        </aside>
     </div>
-  </div>
 
-  <!-- Bottom Footer Telemetry Strip -->
-  <footer class="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] text-outline">
-    <div class="flex items-center gap-3">
-      <span class="flex items-center gap-1.5 text-ink-muted">
-        <span class="h-1.5 w-1.5 rounded-full bg-status-active animate-pulse"></span>
-        <span id="footer-stats">0 Media Files</span>
-      </span>
-      <span>0 SQL Queries (Direct Inode Stream)</span>
-      <span id="footer-wf-count">0 Workflows Indexed</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <span class="text-badge-checkpoint">ComfyCaption Bridge: Ready</span>
-      <span>SDCodex v2.4.0 Workstation</span>
-    </div>
-  </footer>
-</div>
-
-<script>
-(function() {
-  let currentFolder = '';
-  let mediaItems = [];
-  let activeItem = null;
-  let foldersList = [];
-  let browseRoot = '';
-  let onlyStarred = localStorage.getItem('sdcodex.gallery.onlyStarred') === '1';
-  const FAVORITES_KEY = 'sdcodex.gallery.starred.v1';
-  const readFavorites = () => { try { const a = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); return new Set(Array.isArray(a) ? a : []); } catch (_) { return new Set(); } };
-  let favorites = readFavorites();
-  let slideshowTimer = null;
-  let shuffleSlideshow = false;
-  let rotation = 0;
-  let zoom = 1;
-  let autoRefreshTimer = null;
-
-  const dom = {
-    rootPath: document.getElementById('header-root-path'),
-    asideRoot: document.getElementById('aside-root-label'),
-    foldersContainer: document.getElementById('folder-list-container'),
-    folderTotalBadge: document.getElementById('folder-total-items-badge'),
-    currentFolderTitle: document.getElementById('current-folder-title'),
-    currentFolderCountBadge: document.getElementById('current-folder-count-badge'),
-    mediaGrid: document.getElementById('media-grid'),
-    sortSelect: document.getElementById('select-sort'),
-    filterWf: document.getElementById('filter-workflow'),
-    filterSidecar: document.getElementById('filter-sidecar'),
-    filter4k: document.getElementById('filter-4k'),
-    btnResetFilters: document.getElementById('btn-reset-filters'),
-    btnRescan: document.getElementById('btn-rescan'),
-    btnExportZip: document.getElementById('btn-export-zip'),
-    btnBulkCaption: document.getElementById('btn-bulk-caption'),
-    btnOptimizeFolder: document.getElementById('btn-optimize-folder'),
-    btnConvertFolder: document.getElementById('btn-convert-folder'),
-    folderActionStatus: document.getElementById('folder-action-status'),
-    btnOpenViewer: document.getElementById('btn-open-lightbox-top'),
-    btnFilterStarred: document.getElementById('btn-filter-starred'),
-    btnAutoRefresh: document.getElementById('btn-auto-refresh'),
-    lightbox: document.getElementById('lightbox'),
-    lbClose: document.getElementById('lb-close'),
-    lbFilename: document.getElementById('lb-filename'),
-    lbRelpath: document.getElementById('lb-relpath'),
-    lbImage: document.getElementById('lb-image'),
-    lbVideo: document.getElementById('lb-video'),
-    lbPrev: document.getElementById('lb-prev'),
-    lbNext: document.getElementById('lb-next'),
-    lbPlay: document.getElementById('lb-play'),
-    lbFullscreen: document.getElementById('lb-fullscreen'),
-    lbShuffle: document.getElementById('lb-shuffle'),
-    lbRotate: document.getElementById('lb-rotate'),
-    lbCopyName: document.getElementById('lb-copy-name'),
-    lbCopyImage: document.getElementById('lb-copy-image'),
-    lbDownload: document.getElementById('lb-download'),
-    captionStatus: document.getElementById('caption-status'),
-    lbDims: document.getElementById('lb-dims'),
-    lbFilesize: document.getElementById('lb-filesize'),
-    lbFormat: document.getElementById('lb-format'),
-    lbPosPrompt: document.getElementById('lb-pos-prompt'),
-    lbNegPrompt: document.getElementById('lb-neg-prompt'),
-    lbParamModel: document.getElementById('lb-param-model'),
-    lbParamSampler: document.getElementById('lb-param-sampler'),
-    lbParamSteps: document.getElementById('lb-param-steps'),
-    lbParamSeed: document.getElementById('lb-param-seed'),
-    lbSidecarText: document.getElementById('lb-sidecar-text'),
-    btnSaveSidecar: document.getElementById('btn-save-sidecar'),
-    btnDownloadWf: document.getElementById('btn-download-wf'),
-    btnCopyPrompt: document.getElementById('btn-copy-sd-prompt'),
-    btnCopyPos: document.getElementById('btn-copy-pos'),
-    btnCopyNeg: document.getElementById('btn-copy-neg'),
-    btnCaptionImage: document.getElementById('btn-caption-image'),
-    btnOptimizeImage: document.getElementById('btn-optimize-image'),
-    btnConvertImage: document.getElementById('btn-convert-image'),
-    lbWfIndicator: document.getElementById('lb-wf-indicator'),
-    lbFitBtn: document.getElementById('lb-fit-btn'),
-    lb100Btn: document.getElementById('lb-100-btn'),
-    footerStats: document.getElementById('footer-stats'),
-    footerWfCount: document.getElementById('footer-wf-count'),
-  };
-
-  async function loadStatus() {
-    try {
-      const res = await fetch('/gallery/api/status');
-      if (!res.ok) return;
-      const data = await res.json();
-      browseRoot = data.root || '';
-      if (data.root) {
-        dom.rootPath.textContent = data.root;
-        dom.asideRoot.textContent = data.root;
-      }
-    } catch(e) {
-      console.error(e);
-    }
-  }
-
-  async function loadFolders() {
-    try {
-      const res = await fetch(`/gallery/api/folders?path=${encodeURIComponent(currentFolder)}`);
-      if (!res.ok) throw new Error('Folders load failed');
-      const data = await res.json();
-      foldersList = data.folders || [];
-      renderFolders();
-    } catch(e) {
-      dom.foldersContainer.innerHTML = '<div class="p-3 text-status-alert text-xs">Failed to load folders</div>';
-    }
-  }
-
-  function renderFolders() {
-    let totalItems = 0;
-    foldersList.forEach(f => { totalItems += f.count; });
-    dom.folderTotalBadge.textContent = `${totalItems.toLocaleString()} items`;
-
-    let html = `<div class="px-2 py-1 flex items-center gap-1 text-outline truncate"><span class="material-symbols-outlined text-[14px]">storage</span>${dom.rootPath.textContent}</div>`;
-    foldersList.forEach(f => {
-      const isActive = (f.path === currentFolder);
-      const activeClass = isActive 
-        ? 'border-l-2 border-badge-checkpoint bg-badge-checkpoint/15 text-primary font-medium' 
-        : 'hover:bg-slate-surface/50 text-ink-muted hover:text-white';
-      const folderIcon = f.is_parent ? 'folder_open' : isActive ? 'folder_open' : 'folder';
-      const iconColor = isActive ? 'text-badge-checkpoint' : 'text-outline';
-      
-      html += `
-        <div data-folder="${escapeAttr(f.path)}" class="folder-row flex items-center justify-between px-2.5 py-1.5 rounded cursor-pointer transition-colors ${activeClass}">
-          <span class="flex items-center gap-2 truncate">
-            <span class="material-symbols-outlined text-[16px] ${iconColor}">${folderIcon}</span>
-            <span class="truncate">${escapeHtml(f.name)}</span>
-          </span>
-          <span class="rounded bg-surface-container-highest px-1.5 text-[10px] text-outline">${f.count}</span>
-        </div>
-      `;
-    });
-    dom.foldersContainer.innerHTML = html;
-
-    dom.foldersContainer.querySelectorAll('.folder-row').forEach(row => {
-      row.addEventListener('click', () => {
-        currentFolder = row.getAttribute('data-folder');
-        renderFolders();
-        void Promise.all([loadFolders(), loadMedia()]);
-      });
-    });
-  }
-
-  async function loadMedia() {
-    dom.mediaGrid.innerHTML = `
-      <div class="col-span-full p-12 text-center text-outline font-mono text-xs rounded-xl border border-outline-variant/20 bg-surface-container-lowest/50 flex flex-col items-center gap-2">
-        <span class="material-symbols-outlined text-2xl text-badge-checkpoint animate-spin">progress_activity</span>
-        <span>Loading media...</span>
-      </div>
-    `;
-
-    const folderTitle = onlyStarred ? '★ Starred · All Folders' : (currentFolder ? `/${currentFolder}` : '/ All Media');
-    dom.currentFolderTitle.textContent = folderTitle;
-
-    const params = new URLSearchParams({
-      folder: onlyStarred ? '' : currentFolder,
-      sort: dom.sortSelect.value,
-      filter_workflow: dom.filterWf.checked ? '1' : '0',
-      filter_sidecar: dom.filterSidecar.checked ? '1' : '0',
-      filter_4k: dom.filter4k.checked ? '1' : '0',
-    });
-
-    try {
-      const res = await fetch(`/gallery/api/media?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to load media');
-      const data = await res.json();
-      const items = data.items || [];
-      mediaItems = onlyStarred ? items.filter(item => favorites.has(item.relpath)) : items;
-      renderMediaGrid();
-    } catch(e) {
-      dom.mediaGrid.innerHTML = `
-        <div class="col-span-full p-12 text-center text-status-alert font-mono text-xs rounded-xl border border-status-alert/30 bg-surface-container-lowest/50">
-          Failed to load media files: ${escapeHtml(e.message)}
-        </div>
-      `;
-    }
-  }
-
-  function renderMediaGrid() {
-    dom.currentFolderCountBadge.textContent = `${mediaItems.length} Media Files`;
-    dom.footerStats.textContent = `${mediaItems.length} Media Files`;
-
-    let wfCount = 0;
-    mediaItems.forEach(i => { if (i.hasWorkflow) wfCount++; });
-    dom.footerWfCount.textContent = `${wfCount} Workflows Indexed`;
-
-    if (mediaItems.length === 0) {
-      dom.mediaGrid.innerHTML = `
-        <div class="col-span-full p-12 text-center text-outline font-mono text-xs rounded-xl border border-outline-variant/20 bg-surface-container-lowest/50 flex flex-col items-center justify-center gap-3">
-          <span class="material-symbols-outlined text-4xl text-outline-variant">photo_library</span>
-          <span class="text-sm font-semibold text-white">No Media Files Found</span>
-          <p class="max-w-md text-ink-muted">Place images in this folder or configure another folder in Settings -> Plugins -> Gallery.</p>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    mediaItems.forEach((item, idx) => {
-      const badgeColor = item.modelBadge === 'FLUX' ? 'text-badge-flux border-badge-flux/40 bg-badge-flux/20'
-                       : item.modelBadge === 'LoRA' ? 'text-badge-lora border-badge-lora/40 bg-badge-lora/20'
-                       : 'text-badge-sdxl border-badge-sdxl/40 bg-badge-sdxl/20';
-
-      html += `
-        <div data-idx="${idx}" class="media-card group relative bg-slate-bg/80 border border-outline-variant/30 hover:border-badge-checkpoint/60 rounded-xl overflow-hidden shadow-sm flex flex-col transition-all cursor-pointer">
-          <div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container-lowest flex items-center justify-center checkered-grid">
-            ${item.kind === 'video' ? `<video class="w-full h-full object-cover" src="${escapeAttr(item.url)}" muted preload="metadata"></video>` : `<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="${escapeAttr(item.url)}" alt="${escapeAttr(item.name)}" loading="lazy"/>`}
-            
-            <div class="absolute top-2 left-2 flex flex-wrap gap-1">
-              <span class="rounded bg-black/70 backdrop-blur px-1.5 py-0.5 font-mono text-[10px] text-white border border-white/20">${item.format}</span>
-              <span class="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold border ${badgeColor}">${item.kind === 'video' ? 'VIDEO' : item.modelBadge}</span>
-            </div>
-
-            <button type="button" data-star="${idx}" title="${favorites.has(item.relpath) ? 'Remove star' : 'Star this file'}" class="media-star absolute top-2 right-2 z-10 grid h-7 w-7 place-items-center rounded bg-black/70 ${favorites.has(item.relpath) ? 'text-status-warning' : 'text-white'} hover:text-status-warning"><span class="material-symbols-outlined text-[16px]">star</span></button>
-            <div class="absolute top-2 right-11 flex gap-1">
-              ${item.hasWorkflow ? `
-                <span class="w-6 h-6 rounded-full bg-badge-checkpoint/90 text-white flex items-center justify-center shadow" title="ComfyUI Workflow Embedded">
-                  <span class="material-symbols-outlined text-[14px]">account_tree</span>
-                </span>` : ''}
-              ${item.hasSidecar ? `
-                <span class="w-6 h-6 rounded-full bg-status-active/90 text-white flex items-center justify-center shadow" title="Has .txt Sidecar">
-                  <span class="material-symbols-outlined text-[14px]">description</span>
-                </span>` : ''}
-            </div>
-
-            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between font-mono text-[11px] text-white bg-black/70 backdrop-blur px-2 py-1 rounded">
-              <span class="truncate font-semibold">${escapeHtml(item.name)}</span>
-              <span class="shrink-0 text-outline-variant text-[10px]">${item.size_fmt}</span>
-            </div>
-          </div>
-
-          <div class="p-2.5 bg-surface-container-low/90 flex items-center justify-between font-mono text-[11px] text-outline">
-            <span class="truncate">${item.folder ? escapeHtml(item.folder) : 'Root'}</span>
-            <span class="shrink-0">${item.width && item.height ? `${item.width}×${item.height}` : ''}</span>
-          </div>
-        </div>
-      `;
-    });
-    dom.mediaGrid.innerHTML = html;
-
-    dom.mediaGrid.querySelectorAll('.media-card').forEach(card => {
-      card.addEventListener('click', (event) => {
-        if (event.target.closest('.media-star')) return;
-        const idx = parseInt(card.getAttribute('data-idx'), 10);
-        openLightbox(mediaItems[idx]);
-      });
-    });
-    dom.mediaGrid.querySelectorAll('.media-star').forEach(button => button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const item = mediaItems[Number(button.dataset.star)];
-      if (!item) return;
-      if (favorites.has(item.relpath)) favorites.delete(item.relpath); else favorites.add(item.relpath);
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-      void loadMedia();
-    }));
-  }
-
-  async function openLightbox(item) {
-    if (!item) return;
-    activeItem = item;
-
-    dom.lbFilename.textContent = item.name;
-    dom.lbRelpath.textContent = item.relpath;
-    const isVideo = item.kind === 'video';
-    rotation = 0; zoom = 1;
-    dom.lbImage.classList.toggle('hidden', isVideo);
-    dom.lbVideo.classList.toggle('hidden', !isVideo);
-    if (isVideo) { dom.lbImage.src = ''; dom.lbVideo.src = item.url; }
-    else { dom.lbVideo.pause(); dom.lbVideo.removeAttribute('src'); dom.lbVideo.load(); dom.lbImage.src = item.url; }
-    applyImageTransform();
-    dom.lbDims.textContent = `${item.width || '--'} × ${item.height || '--'} px`;
-    dom.lbFilesize.textContent = item.size_fmt;
-    dom.lbFormat.textContent = item.format;
-
-    dom.lightbox.classList.remove('hidden');
-
-    // Fetch full metadata
-    try {
-      const res = await fetch(`/gallery/api/meta?path=${encodeURIComponent(item.relpath)}`);
-      if (!res.ok) throw new Error('Meta failed');
-      const meta = await res.json();
-      
-      dom.lbPosPrompt.textContent = meta.sdPrompt || '(No positive prompt recorded in metadata)';
-      dom.lbNegPrompt.textContent = meta.sdNegative || '(No negative prompt recorded)';
-      
-      const p = meta.params || {};
-      dom.lbParamModel.textContent = p.model || item.modelBadge || '--';
-      dom.lbParamSampler.textContent = p.sampler || '--';
-      dom.lbParamSteps.textContent = p.steps ? `${p.steps} Steps · CFG ${p.cfg || '7.0'}` : '--';
-      dom.lbParamSeed.textContent = p.seed || '--';
-
-      dom.lbSidecarText.value = meta.caption || '';
-      dom.btnCaptionImage.disabled = isVideo;
-      dom.btnCaptionImage.classList.toggle('opacity-40', isVideo);
-      const optimizable = !isVideo && /\.(jpe?g|png|webp)$/i.test(item.name);
-      dom.btnOptimizeImage.disabled = !optimizable;
-      dom.btnConvertImage.disabled = isVideo;
-
-      if (meta.hasWorkflow) {
-        dom.btnDownloadWf.disabled = false;
-        dom.lbWfIndicator.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-status-active"></span> Embedded Graph Found';
-        dom.lbWfIndicator.classList.remove('text-outline');
-        dom.lbWfIndicator.classList.add('text-status-active');
-      } else {
-        dom.btnDownloadWf.disabled = true;
-        dom.lbWfIndicator.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-outline"></span> No Workflow Found';
-        dom.lbWfIndicator.classList.remove('text-status-active');
-        dom.lbWfIndicator.classList.add('text-outline');
-      }
-    } catch(e) {
-      console.error(e);
-    }
-  }
-
-  function closeLightbox() {
-    stopSlideshow();
-    dom.lightbox.classList.add('hidden');
-    dom.lbImage.src = '';
-    dom.lbVideo.pause(); dom.lbVideo.removeAttribute('src'); dom.lbVideo.load();
-    activeItem = null;
-  }
-
-  function moveLightbox(delta) {
-    if (!activeItem || !mediaItems.length) return;
-    const index = mediaItems.findIndex(item => item.relpath === activeItem.relpath);
-    let next = (index + delta + mediaItems.length) % mediaItems.length;
-    if (shuffleSlideshow && delta > 0 && mediaItems.length > 1) {
-      next = Math.floor(Math.random() * (mediaItems.length - 1));
-      if (next >= index) next++;
-    }
-    void openLightbox(mediaItems[next]);
-  }
-
-  function applyImageTransform() {
-    dom.lbImage.style.transform = `rotate(${rotation}deg) scale(${zoom})`;
-    dom.lbImage.style.transformOrigin = 'center center';
-  }
-
-  function stopSlideshow() {
-    if (slideshowTimer) clearInterval(slideshowTimer);
-    slideshowTimer = null;
-    dom.lbPlay.textContent = '▶ Play';
-    dom.lbPlay.setAttribute('aria-label', 'Start slideshow');
-  }
-
-  function toggleSlideshow() {
-    if (slideshowTimer) return stopSlideshow();
-    if (mediaItems.length < 2) return;
-    dom.lbPlay.textContent = 'Ⅱ Pause';
-    dom.lbPlay.setAttribute('aria-label', 'Pause slideshow');
-    slideshowTimer = setInterval(() => moveLightbox(1), 5000);
-  }
-
-  // Event handlers
-  dom.lbClose.addEventListener('click', closeLightbox);
-  dom.lbPrev.addEventListener('click', () => moveLightbox(-1));
-  dom.lbNext.addEventListener('click', () => moveLightbox(1));
-  dom.lbPlay.addEventListener('click', toggleSlideshow);
-  dom.lbShuffle.addEventListener('click', () => {
-    shuffleSlideshow = !shuffleSlideshow;
-    dom.lbShuffle.setAttribute('aria-pressed', String(shuffleSlideshow));
-    dom.lbShuffle.classList.toggle('text-primary', shuffleSlideshow);
-  });
-  dom.lbFullscreen.addEventListener('click', async () => {
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await dom.lightbox.requestFullscreen();
-    } catch (_) { /* Fullscreen may be unavailable in embedded browsers. */ }
-  });
-  dom.lbRotate.addEventListener('click', () => { rotation = (rotation + 90) % 360; applyImageTransform(); });
-  dom.lbImage.addEventListener('wheel', event => {
-    if (dom.lbImage.classList.contains('hidden')) return;
-    event.preventDefault();
-    zoom = Math.max(0.25, Math.min(5, zoom + (event.deltaY < 0 ? 0.1 : -0.1)));
-    applyImageTransform();
-  }, { passive: false });
-  dom.lbCopyName.addEventListener('click', async () => {
-    if (!activeItem) return;
-    try { await navigator.clipboard.writeText(activeItem.name); dom.lbCopyName.textContent = 'Copied'; setTimeout(() => dom.lbCopyName.textContent = 'Copy name', 1200); }
-    catch (_) { dom.captionStatus.textContent = 'Clipboard access is unavailable.'; }
-  });
-  dom.lbCopyImage.addEventListener('click', async () => {
-    if (!activeItem || activeItem.kind === 'video' || !navigator.clipboard?.write || !window.ClipboardItem) return;
-    try {
-      const response = await fetch(activeItem.url);
-      const blob = await response.blob();
-      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-      dom.lbCopyImage.textContent = 'Copied';
-      setTimeout(() => dom.lbCopyImage.textContent = 'Copy image', 1200);
-    } catch (error) { dom.captionStatus.textContent = `Copy failed: ${error.message}`; }
-  });
-  dom.lbDownload.addEventListener('click', () => {
-    if (!activeItem) return;
-    const link = document.createElement('a'); link.href = activeItem.url; link.download = activeItem.name; link.click();
-  });
-  dom.btnAutoRefresh.addEventListener('click', () => {
-    if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
-    else autoRefreshTimer = setInterval(() => { if (!document.hidden) void loadMedia(); }, 30000);
-    localStorage.setItem('sdcodex.gallery.autoRefresh', autoRefreshTimer ? '1' : '0');
-    dom.btnAutoRefresh.setAttribute('aria-pressed', String(Boolean(autoRefreshTimer)));
-    dom.btnAutoRefresh.textContent = `Auto refresh: ${autoRefreshTimer ? 'on' : 'off'}`;
-  });
-  dom.lightbox.addEventListener('click', (e) => {
-    if (e.target === dom.lightbox) closeLightbox();
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !dom.lightbox.classList.contains('hidden')) {
-      closeLightbox();
-    } else if (!dom.lightbox.classList.contains('hidden') && e.key === 'ArrowLeft') {
-      moveLightbox(-1);
-    } else if (!dom.lightbox.classList.contains('hidden') && e.key === 'ArrowRight') {
-      moveLightbox(1);
-    } else if (!dom.lightbox.classList.contains('hidden') && e.code === 'Space' && !e.target.closest('video, button')) {
-      e.preventDefault(); toggleSlideshow();
-    } else if (!dom.lightbox.classList.contains('hidden') && e.key.toLowerCase() === 'r') {
-      rotation = (rotation + 90) % 360; applyImageTransform();
-    } else if (!dom.lightbox.classList.contains('hidden') && e.key.toLowerCase() === 'f') {
-      dom.lbFullscreen.click();
-    }
-  });
-
-  dom.btnDownloadWf.addEventListener('click', () => {
-    if (!activeItem) return;
-    window.location.href = `/gallery/api/workflow?path=${encodeURIComponent(activeItem.relpath)}`;
-  });
-
-  dom.btnSaveSidecar.addEventListener('click', async () => {
-    if (!activeItem) return;
-    const txt = dom.lbSidecarText.value;
-    try {
-      dom.btnSaveSidecar.textContent = 'Saving...';
-      const res = await fetch('/gallery/api/caption', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: activeItem.relpath, caption: txt }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        dom.btnSaveSidecar.textContent = 'Saved!';
-        setTimeout(() => { dom.btnSaveSidecar.textContent = 'Save'; }, 1500);
-        activeItem.hasSidecar = Boolean(txt.trim());
-        renderMediaGrid();
-      } else {
-        alert(data.error || 'Failed to save sidecar');
-        dom.btnSaveSidecar.textContent = 'Save';
-      }
-    } catch(e) {
-      alert('Error saving sidecar: ' + e.message);
-      dom.btnSaveSidecar.textContent = 'Save';
-    }
-  });
-
-  dom.btnCopyPos.addEventListener('click', () => {
-    const txt = dom.lbPosPrompt.textContent;
-    if (txt && !txt.startsWith('(')) {
-      navigator.clipboard.writeText(txt);
-      alert('Positive prompt copied to clipboard!');
-    }
-  });
-
-  dom.btnCopyNeg.addEventListener('click', () => {
-    const txt = dom.lbNegPrompt.textContent;
-    if (txt && !txt.startsWith('(')) {
-      navigator.clipboard.writeText(txt);
-      alert('Negative prompt copied to clipboard!');
-    }
-  });
-
-  dom.btnCopyPrompt.addEventListener('click', () => {
-    const txt = dom.lbPosPrompt.textContent;
-    if (txt && !txt.startsWith('(')) {
-      navigator.clipboard.writeText(txt);
-      alert('SD Prompt copied to clipboard!');
-    }
-  });
-
-  async function captionSettings() {
-    const lmStudioUrl = localStorage.getItem('captionLmStudioUrl') || 'http://localhost:1234/v1';
-    const prompt = localStorage.getItem('captionPrompt') || 'Write a short, detailed, natural-language caption for this image. Focus on the subject, style, and mood. Be concise.';
-    const triggerTag = localStorage.getItem('captionTriggerTag') || '';
-    let model = localStorage.getItem('captionModel') || '';
-    if (!model) {
-      const response = await fetch('/comfy-caption/api/check-connection', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lmStudioUrl }),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.connected || !result.models?.length) throw new Error(result.error || 'Connect to a vision model in ComfyCaption first.');
-      model = result.models[0].id;
-    }
-    return { lmStudioUrl, prompt, triggerTag, model };
-  }
-
-  async function captionActiveImage() {
-    if (!activeItem || activeItem.kind === 'video') return;
-    dom.btnCaptionImage.disabled = true;
-    dom.captionStatus.textContent = 'Captioning…';
-    try {
-      const targetResponse = await fetch(`/gallery/api/caption-target?path=${encodeURIComponent(activeItem.relpath)}`);
-      const target = await targetResponse.json();
-      if (!targetResponse.ok) throw new Error(target.error || 'Could not resolve image path');
-      const prefs = await captionSettings();
-      const response = await fetch('/comfy-caption/api/caption-single', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...prefs, folderPath: target.folderPath, fileName: target.fileName }),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.caption) throw new Error(result.error || 'Captioning returned no caption');
-      dom.lbSidecarText.value = result.caption;
-      activeItem.hasSidecar = true;
-      dom.captionStatus.textContent = 'Caption saved to the image sidecar.';
-      await loadMedia();
-    } catch (error) {
-      dom.captionStatus.textContent = `Captioning failed: ${error.message}`;
-      dom.captionStatus.classList.add('text-status-alert');
-    } finally {
-      dom.btnCaptionImage.disabled = false;
-    }
-  }
-
-  async function bulkCaption() {
-    const folderPath = [browseRoot.replace(/\/+$/, ''), currentFolder].filter(Boolean).join('/');
-    if (!folderPath) return;
-    const mode = confirm('Skip images that already have a .txt caption?') ? 'missing' : undefined;
-    dom.btnBulkCaption.disabled = true;
-    dom.btnBulkCaption.querySelector('span:last-child').textContent = 'Starting…';
-    try {
-      const prefs = await captionSettings();
-      const response = await fetch('/comfy-caption/api/batch/start', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...prefs, folderPath, mode }),
-      });
-      const started = await response.json();
-      if (!response.ok) throw new Error(started.error || `Caption request failed (${response.status})`);
-      let since = 0, failures = 0, state = 'running';
-      while (state === 'running' || state === 'cancelling') {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        const statusResponse = await fetch(`/comfy-caption/api/batch/status?since=${since}`, { cache: 'no-store' });
-        if (!statusResponse.ok) throw new Error('Could not read batch caption status');
-        const status = await statusResponse.json();
-        state = status.state;
-        for (const event of status.events || []) {
-          since = Math.max(since, event.eventId || 0);
-          if (event.status === 'started') dom.btnBulkCaption.querySelector('span:last-child').textContent = `${event.current}/${event.total}: ${event.file}`;
-          if (event.status === 'error') failures++;
-        }
-      }
-      dom.btnBulkCaption.querySelector('span:last-child').textContent = state === 'cancelled'
-        ? 'Stopped' : failures ? `Finished · ${failures} failed` : 'Captions saved';
-      await loadMedia();
-    } catch (error) {
-      dom.btnBulkCaption.querySelector('span:last-child').textContent = `Failed: ${error.message}`;
-    } finally {
-      dom.btnBulkCaption.disabled = false;
-      setTimeout(() => { dom.btnBulkCaption.querySelector('span:last-child').textContent = 'Bulk Caption via ComfyCaption'; }, 4500);
-    }
-  }
-
-  dom.btnCaptionImage.addEventListener('click', captionActiveImage);
-  dom.btnBulkCaption.addEventListener('click', () => void bulkCaption());
-  dom.btnOpenViewer.addEventListener('click', () => {
-    if (!mediaItems.length) return;
-    void openLightbox(activeItem || mediaItems[0]);
-  });
-  dom.btnFilterStarred.addEventListener('click', () => {
-    onlyStarred = !onlyStarred;
-    localStorage.setItem('sdcodex.gallery.onlyStarred', onlyStarred ? '1' : '0');
-    dom.btnFilterStarred.setAttribute('aria-pressed', String(onlyStarred));
-    dom.btnFilterStarred.classList.toggle('text-status-warning', onlyStarred);
-    void loadMedia();
-  });
-
-  async function runMediaOperation(action, payload, statusNode) {
-    statusNode.textContent = action === 'optimize' ? 'Optimizing…' : 'Converting…';
-    statusNode.classList.remove('text-status-alert');
-    try {
-      const response = await fetch(`/gallery/api/${action}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-      });
-      const result = await response.json();
-      if (!response.ok || result.error) throw new Error(result.error || `${action} failed`);
-      if (action === 'optimize') {
-        const saved = Math.max(0, (result.bytesBefore || 0) - (result.bytesAfter || 0));
-        statusNode.textContent = `Optimized ${result.optimized || 0}; saved ${formatBytes(saved)}${result.errors?.length ? `; ${result.errors.length} errors` : ''}`;
-      } else {
-        statusNode.textContent = `Converted ${result.converted || 0} to ${result.format}${result.skipped ? `; ${result.skipped} skipped` : ''}${result.deleted ? `; ${result.deleted} originals removed` : ''}`;
-      }
-      await fetch('/gallery/api/rescan', { method: 'POST' });
-      await loadMedia();
-      return result;
-    } catch (error) {
-      statusNode.textContent = `${action} failed: ${error.message}`;
-      statusNode.classList.add('text-status-alert');
-      return null;
-    }
-  }
-
-  async function convert(kind) {
-    const format = (prompt('Output format: jpg, png, webp, gif, tiff, or bmp', 'webp') || '').trim().toLowerCase();
-    if (!['jpg', 'jpeg', 'png', 'webp', 'gif', 'tiff', 'bmp'].includes(format)) return;
-    const payload = kind === 'folder' ? { folder: currentFolder, format } : { path: activeItem?.relpath, format };
-    if (!payload.path && kind !== 'folder') return;
-    if (confirm('Delete original files after each successful conversion?')) payload.delete = true;
-    await runMediaOperation('convert', payload, kind === 'folder' ? dom.folderActionStatus : dom.captionStatus);
-  }
-
-  dom.btnOptimizeImage.addEventListener('click', () => {
-    if (activeItem?.kind === 'image') void runMediaOperation('optimize', { path: activeItem.relpath }, dom.captionStatus);
-  });
-  dom.btnConvertImage.addEventListener('click', () => { if (activeItem?.kind === 'image') void convert('image'); });
-  dom.btnOptimizeFolder.addEventListener('click', () => void runMediaOperation('optimize', { folder: currentFolder }, dom.folderActionStatus));
-  dom.btnConvertFolder.addEventListener('click', () => void convert('folder'));
-
-  dom.btnRescan.addEventListener('click', async () => {
-    dom.btnRescan.classList.add('opacity-50');
-    try {
-      await fetch('/gallery/api/rescan', { method: 'POST' });
-      await loadStatus();
-      await loadFolders();
-      await loadMedia();
-    } finally {
-      dom.btnRescan.classList.remove('opacity-50');
-    }
-  });
-
-  dom.btnExportZip.addEventListener('click', () => {
-    window.location.href = `/gallery/api/export-workflows?folder=${encodeURIComponent(currentFolder)}`;
-  });
-
-  dom.btnResetFilters.addEventListener('click', () => {
-    dom.filterWf.checked = false;
-    dom.filterSidecar.checked = false;
-    dom.filter4k.checked = false;
-    dom.sortSelect.value = 'date_desc';
-    loadMedia();
-  });
-
-  [dom.filterWf, dom.filterSidecar, dom.filter4k, dom.sortSelect].forEach(el => {
-    el.addEventListener('change', loadMedia);
-  });
-
-  dom.lbFitBtn.addEventListener('click', () => {
-    zoom = 1; rotation = 0; applyImageTransform();
-    dom.lbImage.style.maxHeight = '74vh';
-    dom.lbImage.style.maxWidth = '100%';
-  });
-
-  dom.lb100Btn.addEventListener('click', () => {
-    zoom = 1; applyImageTransform();
-    dom.lbImage.style.maxHeight = 'none';
-    dom.lbImage.style.maxWidth = 'none';
-  });
-
-  function escapeHtml(s) {
-    if (!s) return '';
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function formatBytes(bytes) {
-    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let index = 0, value = bytes;
-    while (value >= 1024 && index < units.length - 1) { value /= 1024; index++; }
-    return `${value.toFixed(index ? 1 : 0)} ${units[index]}`;
-  }
-
-  function escapeAttr(s) {
-    if (!s) return '';
-    return String(s).replace(/"/g, '&quot;');
-  }
-
-  // Initialize
-  if (onlyStarred) { dom.btnFilterStarred.setAttribute('aria-pressed', 'true'); dom.btnFilterStarred.classList.add('text-status-warning'); }
-  if (localStorage.getItem('sdcodex.gallery.autoRefresh') === '1') dom.btnAutoRefresh.click();
-  loadStatus();
-  loadFolders();
-  loadMedia();
-})();
-</script>
+    <p id="config-notice" role="status" hidden></p>
+    <script src="/gallery/api/legacy-ui/resilience.js?v=20260831-native-decode-queue"></script>
+    <script src="/gallery/api/legacy-ui/settings.js?v=20260904-manifest-refresh-default"></script>
+    <script src="/gallery/api/legacy-ui/app.js?v=20260906-convert-overlap"></script>
 </body>
 </html>
