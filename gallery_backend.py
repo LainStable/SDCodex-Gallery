@@ -50,11 +50,13 @@ def _workspace_root():
 
 
 def resolve_browse_root():
-    """Pick first existing directory from GALLERY_ROOT, GALLERY, or common paths."""
+    """Resolve the configured gallery root, preferring explicit volume settings."""
     ws = _workspace_root()
     env_root = os.environ.get("GALLERY_ROOT") or os.environ.get("GALLERY")
-    if env_root and os.path.isdir(env_root):
-        return os.path.abspath(env_root)
+    if env_root:
+        # Keep the configured target even when its mount is absent so status
+        # reports the real problem instead of silently browsing another folder.
+        return os.path.abspath(os.path.expanduser(env_root))
 
     candidates = [
         os.path.join(ws, "downloads"),
