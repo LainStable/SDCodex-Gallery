@@ -1,6 +1,6 @@
 {
   "id": "gallery",
-  "name": "SDCodex Gallery",
+  "name": "gallery",
   "version": "2.0.0",
   "description": "Disk-backed media gallery and workflow inspector. Scans folders directly, reads captions/.txt sidecars, SD prompts, and ComfyUI workflows from image metadata.",
   "author": "LainStable",
