@@ -47,7 +47,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   <nav class="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
     <span class="flex items-center gap-2 text-white font-semibold mr-2">
       <span class="material-symbols-outlined text-badge-sdxl" style="font-variation-settings:'FILL' 1;">photo_library</span>
-      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.2</span>
+      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.3</span>
     </span>
     <span class="text-ink-faint">· Disk Media &amp; Workflow Browser</span>
   </nav>
@@ -57,7 +57,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     <div class="flex items-center gap-2 font-mono text-[11px]">
       <span class="material-symbols-outlined text-secondary text-[18px]">photo_library</span>
       <strong class="font-display text-sm">SDCodex-Gallery</strong>
-      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.2 · DISK-BACKED</span>
+      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.3 · DISK-BACKED</span>
       <span class="hidden xl:inline text-outline">GALLERY_ROOT: <code id="header-root-path" class="text-secondary">/data/downloads</code></span>
       <span class="hidden xl:inline-flex items-center gap-1 text-status-active"><span class="h-1.5 w-1.5 rounded-full bg-status-active"></span>Zero Database Mode: Direct IO</span>
     </div>
@@ -848,29 +848,23 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...prefs, folderPath, mode }),
       });
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || `Caption request failed (${response.status})`);
-      }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let failures = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const chunks = buffer.split(/\r?\n\r?\n/);
-        buffer = chunks.pop() || '';
-        for (const chunk of chunks) {
-          const line = chunk.split(/\r?\n/).find(row => row.startsWith('data:'));
-          if (!line) continue;
-          const event = JSON.parse(line.slice(5).trim());
+      const started = await response.json();
+      if (!response.ok) throw new Error(started.error || `Caption request failed (${response.status})`);
+      let since = 0, failures = 0, state = 'running';
+      while (state === 'running' || state === 'cancelling') {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const statusResponse = await fetch(`/comfy-caption/api/batch/status?since=${since}`, { cache: 'no-store' });
+        if (!statusResponse.ok) throw new Error('Could not read batch caption status');
+        const status = await statusResponse.json();
+        state = status.state;
+        for (const event of status.events || []) {
+          since = Math.max(since, event.eventId || 0);
           if (event.status === 'started') dom.btnBulkCaption.querySelector('span:last-child').textContent = `${event.current}/${event.total}: ${event.file}`;
           if (event.status === 'error') failures++;
         }
       }
-      dom.btnBulkCaption.querySelector('span:last-child').textContent = failures ? `Finished · ${failures} failed` : 'Captions saved';
+      dom.btnBulkCaption.querySelector('span:last-child').textContent = state === 'cancelled'
+        ? 'Stopped' : failures ? `Finished · ${failures} failed` : 'Captions saved';
       await loadMedia();
     } catch (error) {
       dom.btnBulkCaption.querySelector('span:last-child').textContent = `Failed: ${error.message}`;
