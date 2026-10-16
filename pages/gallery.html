@@ -47,7 +47,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   <nav class="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
     <span class="flex items-center gap-2 text-white font-semibold mr-2">
       <span class="material-symbols-outlined text-badge-sdxl" style="font-variation-settings:'FILL' 1;">photo_library</span>
-      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.1</span>
+      SDCodex-Gallery <span class="rounded-[3px] border border-badge-checkpoint/40 bg-badge-checkpoint/15 px-1.5 py-0.5 text-primary">v2.0.2</span>
     </span>
     <span class="text-ink-faint">· Disk Media &amp; Workflow Browser</span>
   </nav>
@@ -57,7 +57,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     <div class="flex items-center gap-2 font-mono text-[11px]">
       <span class="material-symbols-outlined text-secondary text-[18px]">photo_library</span>
       <strong class="font-display text-sm">SDCodex-Gallery</strong>
-      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.1 · DISK-BACKED</span>
+      <span class="rounded-[3px] border border-badge-checkpoint/30 bg-badge-checkpoint/20 px-1.5 py-0.5 text-badge-checkpoint">OFFICIAL v2.0.2 · DISK-BACKED</span>
       <span class="hidden xl:inline text-outline">GALLERY_ROOT: <code id="header-root-path" class="text-secondary">/data/downloads</code></span>
       <span class="hidden xl:inline-flex items-center gap-1 text-status-active"><span class="h-1.5 w-1.5 rounded-full bg-status-active"></span>Zero Database Mode: Direct IO</span>
     </div>
@@ -70,6 +70,8 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
         <span class="material-symbols-outlined text-[15px]">open_in_new</span>
         <span>Open Lightbox Viewer</span>
       </button>
+      <button id="btn-filter-starred" aria-pressed="false" class="rounded border border-outline-variant/40 bg-slate-surface px-2.5 py-1 font-mono text-[11px] text-on-surface flex items-center gap-1.5 hover:text-white transition-all"><span class="material-symbols-outlined text-[15px]">star</span><span>Starred</span></button>
+      <button id="btn-auto-refresh" aria-pressed="false" class="rounded border border-outline-variant/40 bg-slate-surface px-2.5 py-1 font-mono text-[11px] text-on-surface hover:text-white transition-all">Auto refresh: off</button>
     </div>
   </div>
 
@@ -114,6 +116,11 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
             <span class="material-symbols-outlined text-[15px] text-secondary">folder_zip</span>
             <span>Export Workflows as ZIP</span>
           </button>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button id="btn-optimize-folder" class="py-1.5 bg-slate-surface hover:bg-slate-surface/80 border border-outline-variant/40 rounded font-mono text-[10px] text-on-surface">Optimize Folder</button>
+            <button id="btn-convert-folder" class="py-1.5 bg-slate-surface hover:bg-slate-surface/80 border border-outline-variant/40 rounded font-mono text-[10px] text-on-surface">Convert Folder</button>
+          </div>
+          <span id="folder-action-status" class="min-h-4 font-mono text-[10px] text-outline"></span>
         </div>
       </div>
     </aside>
@@ -160,6 +167,15 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
         <div class="flex items-center gap-2 shrink-0">
           <button id="lb-fit-btn" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Fit</button>
           <button id="lb-100-btn" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">100%</button>
+          <button id="lb-prev" aria-label="Previous media" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">←</button>
+          <button id="lb-next" aria-label="Next media" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">→</button>
+          <button id="lb-play" aria-label="Start slideshow" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">▶ Play</button>
+          <button id="lb-shuffle" aria-pressed="false" aria-label="Shuffle slideshow" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Shuffle</button>
+          <button id="lb-fullscreen" aria-label="Toggle fullscreen" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Fullscreen</button>
+          <button id="lb-rotate" aria-label="Rotate image" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Rotate</button>
+          <button id="lb-copy-name" aria-label="Copy filename" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Copy name</button>
+          <button id="lb-copy-image" aria-label="Copy image" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Copy image</button>
+          <button id="lb-download" aria-label="Download media" class="rounded border border-outline-variant/30 bg-surface-container px-2 py-0.5 font-mono text-[11px] hover:text-white">Download</button>
           <button id="lb-close" class="w-7 h-7 rounded-lg bg-status-alert/20 text-status-alert hover:bg-status-alert/30 border border-status-alert/40 flex items-center justify-center transition-all">
             <span class="material-symbols-outlined text-[16px]">close</span>
           </button>
@@ -172,6 +188,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
         <div class="flex-1 bg-surface-container-lowest/90 relative flex items-center justify-center p-4 min-h-64 overflow-auto scroll-thin">
           <div class="relative max-h-full max-w-full flex items-center justify-center rounded overflow-hidden">
             <img id="lb-image" class="max-h-[74vh] w-auto object-contain rounded shadow-2xl transition-all" src="" alt="Viewer"/>
+            <video id="lb-video" class="hidden max-h-[74vh] max-w-full rounded shadow-2xl" controls playsinline></video>
             <div id="lb-image-stats" class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded text-code-sm font-mono text-[11px] text-white border border-white/10 flex items-center gap-2">
               <span id="lb-dims">-- × --</span>
               <span class="text-outline-variant">•</span>
@@ -206,6 +223,11 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
                 <span>Copy SD Prompt</span>
               </button>
             </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btn-optimize-image" class="py-1.5 px-2 border border-outline-variant/40 hover:bg-surface-container-high text-on-surface rounded font-mono text-[11px]">Optimize Image</button>
+              <button id="btn-convert-image" class="py-1.5 px-2 border border-outline-variant/40 hover:bg-surface-container-high text-on-surface rounded font-mono text-[11px]">Convert Image</button>
+            </div>
+            <span id="caption-status" class="min-h-4 font-mono text-[10px] text-outline"></span>
           </div>
 
           <!-- Parameters & Sidecar Content -->
@@ -300,6 +322,16 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   let mediaItems = [];
   let activeItem = null;
   let foldersList = [];
+  let browseRoot = '';
+  let onlyStarred = localStorage.getItem('sdcodex.gallery.onlyStarred') === '1';
+  const FAVORITES_KEY = 'sdcodex.gallery.starred.v1';
+  const readFavorites = () => { try { const a = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); return new Set(Array.isArray(a) ? a : []); } catch (_) { return new Set(); } };
+  let favorites = readFavorites();
+  let slideshowTimer = null;
+  let shuffleSlideshow = false;
+  let rotation = 0;
+  let zoom = 1;
+  let autoRefreshTimer = null;
 
   const dom = {
     rootPath: document.getElementById('header-root-path'),
@@ -317,11 +349,28 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     btnRescan: document.getElementById('btn-rescan'),
     btnExportZip: document.getElementById('btn-export-zip'),
     btnBulkCaption: document.getElementById('btn-bulk-caption'),
+    btnOptimizeFolder: document.getElementById('btn-optimize-folder'),
+    btnConvertFolder: document.getElementById('btn-convert-folder'),
+    folderActionStatus: document.getElementById('folder-action-status'),
+    btnOpenViewer: document.getElementById('btn-open-lightbox-top'),
+    btnFilterStarred: document.getElementById('btn-filter-starred'),
+    btnAutoRefresh: document.getElementById('btn-auto-refresh'),
     lightbox: document.getElementById('lightbox'),
     lbClose: document.getElementById('lb-close'),
     lbFilename: document.getElementById('lb-filename'),
     lbRelpath: document.getElementById('lb-relpath'),
     lbImage: document.getElementById('lb-image'),
+    lbVideo: document.getElementById('lb-video'),
+    lbPrev: document.getElementById('lb-prev'),
+    lbNext: document.getElementById('lb-next'),
+    lbPlay: document.getElementById('lb-play'),
+    lbFullscreen: document.getElementById('lb-fullscreen'),
+    lbShuffle: document.getElementById('lb-shuffle'),
+    lbRotate: document.getElementById('lb-rotate'),
+    lbCopyName: document.getElementById('lb-copy-name'),
+    lbCopyImage: document.getElementById('lb-copy-image'),
+    lbDownload: document.getElementById('lb-download'),
+    captionStatus: document.getElementById('caption-status'),
     lbDims: document.getElementById('lb-dims'),
     lbFilesize: document.getElementById('lb-filesize'),
     lbFormat: document.getElementById('lb-format'),
@@ -338,6 +387,8 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     btnCopyPos: document.getElementById('btn-copy-pos'),
     btnCopyNeg: document.getElementById('btn-copy-neg'),
     btnCaptionImage: document.getElementById('btn-caption-image'),
+    btnOptimizeImage: document.getElementById('btn-optimize-image'),
+    btnConvertImage: document.getElementById('btn-convert-image'),
     lbWfIndicator: document.getElementById('lb-wf-indicator'),
     lbFitBtn: document.getElementById('lb-fit-btn'),
     lb100Btn: document.getElementById('lb-100-btn'),
@@ -350,6 +401,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       const res = await fetch('/gallery/api/status');
       if (!res.ok) return;
       const data = await res.json();
+      browseRoot = data.root || '';
       if (data.root) {
         dom.rootPath.textContent = data.root;
         dom.asideRoot.textContent = data.root;
@@ -361,7 +413,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
 
   async function loadFolders() {
     try {
-      const res = await fetch('/gallery/api/folders');
+      const res = await fetch(`/gallery/api/folders?path=${encodeURIComponent(currentFolder)}`);
       if (!res.ok) throw new Error('Folders load failed');
       const data = await res.json();
       foldersList = data.folders || [];
@@ -382,7 +434,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       const activeClass = isActive 
         ? 'border-l-2 border-badge-checkpoint bg-badge-checkpoint/15 text-primary font-medium' 
         : 'hover:bg-slate-surface/50 text-ink-muted hover:text-white';
-      const folderIcon = isActive ? 'folder_open' : 'folder';
+      const folderIcon = f.is_parent ? 'folder_open' : isActive ? 'folder_open' : 'folder';
       const iconColor = isActive ? 'text-badge-checkpoint' : 'text-outline';
       
       html += `
@@ -401,7 +453,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       row.addEventListener('click', () => {
         currentFolder = row.getAttribute('data-folder');
         renderFolders();
-        loadMedia();
+        void Promise.all([loadFolders(), loadMedia()]);
       });
     });
   }
@@ -414,11 +466,11 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       </div>
     `;
 
-    const folderTitle = currentFolder ? `/${currentFolder}` : '/ All Media';
+    const folderTitle = onlyStarred ? '★ Starred · All Folders' : (currentFolder ? `/${currentFolder}` : '/ All Media');
     dom.currentFolderTitle.textContent = folderTitle;
 
     const params = new URLSearchParams({
-      folder: currentFolder,
+      folder: onlyStarred ? '' : currentFolder,
       sort: dom.sortSelect.value,
       filter_workflow: dom.filterWf.checked ? '1' : '0',
       filter_sidecar: dom.filterSidecar.checked ? '1' : '0',
@@ -429,7 +481,8 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       const res = await fetch(`/gallery/api/media?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to load media');
       const data = await res.json();
-      mediaItems = data.items || [];
+      const items = data.items || [];
+      mediaItems = onlyStarred ? items.filter(item => favorites.has(item.relpath)) : items;
       renderMediaGrid();
     } catch(e) {
       dom.mediaGrid.innerHTML = `
@@ -468,14 +521,15 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       html += `
         <div data-idx="${idx}" class="media-card group relative bg-slate-bg/80 border border-outline-variant/30 hover:border-badge-checkpoint/60 rounded-xl overflow-hidden shadow-sm flex flex-col transition-all cursor-pointer">
           <div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container-lowest flex items-center justify-center checkered-grid">
-            <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="${escapeAttr(item.url)}" alt="${escapeAttr(item.name)}" loading="lazy"/>
+            ${item.kind === 'video' ? `<video class="w-full h-full object-cover" src="${escapeAttr(item.url)}" muted preload="metadata"></video>` : `<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="${escapeAttr(item.url)}" alt="${escapeAttr(item.name)}" loading="lazy"/>`}
             
             <div class="absolute top-2 left-2 flex flex-wrap gap-1">
               <span class="rounded bg-black/70 backdrop-blur px-1.5 py-0.5 font-mono text-[10px] text-white border border-white/20">${item.format}</span>
-              <span class="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold border ${badgeColor}">${item.modelBadge}</span>
+              <span class="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold border ${badgeColor}">${item.kind === 'video' ? 'VIDEO' : item.modelBadge}</span>
             </div>
 
-            <div class="absolute top-2 right-2 flex gap-1">
+            <button type="button" data-star="${idx}" title="${favorites.has(item.relpath) ? 'Remove star' : 'Star this file'}" class="media-star absolute top-2 right-2 z-10 grid h-7 w-7 place-items-center rounded bg-black/70 ${favorites.has(item.relpath) ? 'text-status-warning' : 'text-white'} hover:text-status-warning"><span class="material-symbols-outlined text-[16px]">star</span></button>
+            <div class="absolute top-2 right-11 flex gap-1">
               ${item.hasWorkflow ? `
                 <span class="w-6 h-6 rounded-full bg-badge-checkpoint/90 text-white flex items-center justify-center shadow" title="ComfyUI Workflow Embedded">
                   <span class="material-symbols-outlined text-[14px]">account_tree</span>
@@ -502,11 +556,20 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     dom.mediaGrid.innerHTML = html;
 
     dom.mediaGrid.querySelectorAll('.media-card').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (event) => {
+        if (event.target.closest('.media-star')) return;
         const idx = parseInt(card.getAttribute('data-idx'), 10);
         openLightbox(mediaItems[idx]);
       });
     });
+    dom.mediaGrid.querySelectorAll('.media-star').forEach(button => button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const item = mediaItems[Number(button.dataset.star)];
+      if (!item) return;
+      if (favorites.has(item.relpath)) favorites.delete(item.relpath); else favorites.add(item.relpath);
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+      void loadMedia();
+    }));
   }
 
   async function openLightbox(item) {
@@ -515,7 +578,13 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
 
     dom.lbFilename.textContent = item.name;
     dom.lbRelpath.textContent = item.relpath;
-    dom.lbImage.src = item.url;
+    const isVideo = item.kind === 'video';
+    rotation = 0; zoom = 1;
+    dom.lbImage.classList.toggle('hidden', isVideo);
+    dom.lbVideo.classList.toggle('hidden', !isVideo);
+    if (isVideo) { dom.lbImage.src = ''; dom.lbVideo.src = item.url; }
+    else { dom.lbVideo.pause(); dom.lbVideo.removeAttribute('src'); dom.lbVideo.load(); dom.lbImage.src = item.url; }
+    applyImageTransform();
     dom.lbDims.textContent = `${item.width || '--'} × ${item.height || '--'} px`;
     dom.lbFilesize.textContent = item.size_fmt;
     dom.lbFormat.textContent = item.format;
@@ -538,6 +607,11 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
       dom.lbParamSeed.textContent = p.seed || '--';
 
       dom.lbSidecarText.value = meta.caption || '';
+      dom.btnCaptionImage.disabled = isVideo;
+      dom.btnCaptionImage.classList.toggle('opacity-40', isVideo);
+      const optimizable = !isVideo && /\.(jpe?g|png|webp)$/i.test(item.name);
+      dom.btnOptimizeImage.disabled = !optimizable;
+      dom.btnConvertImage.disabled = isVideo;
 
       if (meta.hasWorkflow) {
         dom.btnDownloadWf.disabled = false;
@@ -556,13 +630,93 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   }
 
   function closeLightbox() {
+    stopSlideshow();
     dom.lightbox.classList.add('hidden');
     dom.lbImage.src = '';
+    dom.lbVideo.pause(); dom.lbVideo.removeAttribute('src'); dom.lbVideo.load();
     activeItem = null;
+  }
+
+  function moveLightbox(delta) {
+    if (!activeItem || !mediaItems.length) return;
+    const index = mediaItems.findIndex(item => item.relpath === activeItem.relpath);
+    let next = (index + delta + mediaItems.length) % mediaItems.length;
+    if (shuffleSlideshow && delta > 0 && mediaItems.length > 1) {
+      next = Math.floor(Math.random() * (mediaItems.length - 1));
+      if (next >= index) next++;
+    }
+    void openLightbox(mediaItems[next]);
+  }
+
+  function applyImageTransform() {
+    dom.lbImage.style.transform = `rotate(${rotation}deg) scale(${zoom})`;
+    dom.lbImage.style.transformOrigin = 'center center';
+  }
+
+  function stopSlideshow() {
+    if (slideshowTimer) clearInterval(slideshowTimer);
+    slideshowTimer = null;
+    dom.lbPlay.textContent = '▶ Play';
+    dom.lbPlay.setAttribute('aria-label', 'Start slideshow');
+  }
+
+  function toggleSlideshow() {
+    if (slideshowTimer) return stopSlideshow();
+    if (mediaItems.length < 2) return;
+    dom.lbPlay.textContent = 'Ⅱ Pause';
+    dom.lbPlay.setAttribute('aria-label', 'Pause slideshow');
+    slideshowTimer = setInterval(() => moveLightbox(1), 5000);
   }
 
   // Event handlers
   dom.lbClose.addEventListener('click', closeLightbox);
+  dom.lbPrev.addEventListener('click', () => moveLightbox(-1));
+  dom.lbNext.addEventListener('click', () => moveLightbox(1));
+  dom.lbPlay.addEventListener('click', toggleSlideshow);
+  dom.lbShuffle.addEventListener('click', () => {
+    shuffleSlideshow = !shuffleSlideshow;
+    dom.lbShuffle.setAttribute('aria-pressed', String(shuffleSlideshow));
+    dom.lbShuffle.classList.toggle('text-primary', shuffleSlideshow);
+  });
+  dom.lbFullscreen.addEventListener('click', async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await dom.lightbox.requestFullscreen();
+    } catch (_) { /* Fullscreen may be unavailable in embedded browsers. */ }
+  });
+  dom.lbRotate.addEventListener('click', () => { rotation = (rotation + 90) % 360; applyImageTransform(); });
+  dom.lbImage.addEventListener('wheel', event => {
+    if (dom.lbImage.classList.contains('hidden')) return;
+    event.preventDefault();
+    zoom = Math.max(0.25, Math.min(5, zoom + (event.deltaY < 0 ? 0.1 : -0.1)));
+    applyImageTransform();
+  }, { passive: false });
+  dom.lbCopyName.addEventListener('click', async () => {
+    if (!activeItem) return;
+    try { await navigator.clipboard.writeText(activeItem.name); dom.lbCopyName.textContent = 'Copied'; setTimeout(() => dom.lbCopyName.textContent = 'Copy name', 1200); }
+    catch (_) { dom.captionStatus.textContent = 'Clipboard access is unavailable.'; }
+  });
+  dom.lbCopyImage.addEventListener('click', async () => {
+    if (!activeItem || activeItem.kind === 'video' || !navigator.clipboard?.write || !window.ClipboardItem) return;
+    try {
+      const response = await fetch(activeItem.url);
+      const blob = await response.blob();
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      dom.lbCopyImage.textContent = 'Copied';
+      setTimeout(() => dom.lbCopyImage.textContent = 'Copy image', 1200);
+    } catch (error) { dom.captionStatus.textContent = `Copy failed: ${error.message}`; }
+  });
+  dom.lbDownload.addEventListener('click', () => {
+    if (!activeItem) return;
+    const link = document.createElement('a'); link.href = activeItem.url; link.download = activeItem.name; link.click();
+  });
+  dom.btnAutoRefresh.addEventListener('click', () => {
+    if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+    else autoRefreshTimer = setInterval(() => { if (!document.hidden) void loadMedia(); }, 30000);
+    localStorage.setItem('sdcodex.gallery.autoRefresh', autoRefreshTimer ? '1' : '0');
+    dom.btnAutoRefresh.setAttribute('aria-pressed', String(Boolean(autoRefreshTimer)));
+    dom.btnAutoRefresh.textContent = `Auto refresh: ${autoRefreshTimer ? 'on' : 'off'}`;
+  });
   dom.lightbox.addEventListener('click', (e) => {
     if (e.target === dom.lightbox) closeLightbox();
   });
@@ -570,6 +724,16 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !dom.lightbox.classList.contains('hidden')) {
       closeLightbox();
+    } else if (!dom.lightbox.classList.contains('hidden') && e.key === 'ArrowLeft') {
+      moveLightbox(-1);
+    } else if (!dom.lightbox.classList.contains('hidden') && e.key === 'ArrowRight') {
+      moveLightbox(1);
+    } else if (!dom.lightbox.classList.contains('hidden') && e.code === 'Space' && !e.target.closest('video, button')) {
+      e.preventDefault(); toggleSlideshow();
+    } else if (!dom.lightbox.classList.contains('hidden') && e.key.toLowerCase() === 'r') {
+      rotation = (rotation + 90) % 360; applyImageTransform();
+    } else if (!dom.lightbox.classList.contains('hidden') && e.key.toLowerCase() === 'f') {
+      dom.lbFullscreen.click();
     }
   });
 
@@ -628,14 +792,148 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     }
   });
 
-  dom.btnCaptionImage.addEventListener('click', async () => {
-    if (!activeItem) return;
-    const initialPrompt = prompt('Add caption or notes for this image:', dom.lbSidecarText.value);
-    if (initialPrompt !== null) {
-      dom.lbSidecarText.value = initialPrompt;
-      dom.btnSaveSidecar.click();
+  async function captionSettings() {
+    const lmStudioUrl = localStorage.getItem('captionLmStudioUrl') || 'http://localhost:1234/v1';
+    const prompt = localStorage.getItem('captionPrompt') || 'Write a short, detailed, natural-language caption for this image. Focus on the subject, style, and mood. Be concise.';
+    const triggerTag = localStorage.getItem('captionTriggerTag') || '';
+    let model = localStorage.getItem('captionModel') || '';
+    if (!model) {
+      const response = await fetch('/comfy-caption/api/check-connection', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lmStudioUrl }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.connected || !result.models?.length) throw new Error(result.error || 'Connect to a vision model in ComfyCaption first.');
+      model = result.models[0].id;
     }
+    return { lmStudioUrl, prompt, triggerTag, model };
+  }
+
+  async function captionActiveImage() {
+    if (!activeItem || activeItem.kind === 'video') return;
+    dom.btnCaptionImage.disabled = true;
+    dom.captionStatus.textContent = 'Captioning…';
+    try {
+      const targetResponse = await fetch(`/gallery/api/caption-target?path=${encodeURIComponent(activeItem.relpath)}`);
+      const target = await targetResponse.json();
+      if (!targetResponse.ok) throw new Error(target.error || 'Could not resolve image path');
+      const prefs = await captionSettings();
+      const response = await fetch('/comfy-caption/api/caption-single', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...prefs, folderPath: target.folderPath, fileName: target.fileName }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.caption) throw new Error(result.error || 'Captioning returned no caption');
+      dom.lbSidecarText.value = result.caption;
+      activeItem.hasSidecar = true;
+      dom.captionStatus.textContent = 'Caption saved to the image sidecar.';
+      await loadMedia();
+    } catch (error) {
+      dom.captionStatus.textContent = `Captioning failed: ${error.message}`;
+      dom.captionStatus.classList.add('text-status-alert');
+    } finally {
+      dom.btnCaptionImage.disabled = false;
+    }
+  }
+
+  async function bulkCaption() {
+    const folderPath = [browseRoot.replace(/\/+$/, ''), currentFolder].filter(Boolean).join('/');
+    if (!folderPath) return;
+    const mode = confirm('Skip images that already have a .txt caption?') ? 'missing' : undefined;
+    dom.btnBulkCaption.disabled = true;
+    dom.btnBulkCaption.querySelector('span:last-child').textContent = 'Starting…';
+    try {
+      const prefs = await captionSettings();
+      const response = await fetch('/comfy-caption/api/caption', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...prefs, folderPath, mode }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || `Caption request failed (${response.status})`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let failures = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split(/\r?\n\r?\n/);
+        buffer = chunks.pop() || '';
+        for (const chunk of chunks) {
+          const line = chunk.split(/\r?\n/).find(row => row.startsWith('data:'));
+          if (!line) continue;
+          const event = JSON.parse(line.slice(5).trim());
+          if (event.status === 'started') dom.btnBulkCaption.querySelector('span:last-child').textContent = `${event.current}/${event.total}: ${event.file}`;
+          if (event.status === 'error') failures++;
+        }
+      }
+      dom.btnBulkCaption.querySelector('span:last-child').textContent = failures ? `Finished · ${failures} failed` : 'Captions saved';
+      await loadMedia();
+    } catch (error) {
+      dom.btnBulkCaption.querySelector('span:last-child').textContent = `Failed: ${error.message}`;
+    } finally {
+      dom.btnBulkCaption.disabled = false;
+      setTimeout(() => { dom.btnBulkCaption.querySelector('span:last-child').textContent = 'Bulk Caption via ComfyCaption'; }, 4500);
+    }
+  }
+
+  dom.btnCaptionImage.addEventListener('click', captionActiveImage);
+  dom.btnBulkCaption.addEventListener('click', () => void bulkCaption());
+  dom.btnOpenViewer.addEventListener('click', () => {
+    if (!mediaItems.length) return;
+    void openLightbox(activeItem || mediaItems[0]);
   });
+  dom.btnFilterStarred.addEventListener('click', () => {
+    onlyStarred = !onlyStarred;
+    localStorage.setItem('sdcodex.gallery.onlyStarred', onlyStarred ? '1' : '0');
+    dom.btnFilterStarred.setAttribute('aria-pressed', String(onlyStarred));
+    dom.btnFilterStarred.classList.toggle('text-status-warning', onlyStarred);
+    void loadMedia();
+  });
+
+  async function runMediaOperation(action, payload, statusNode) {
+    statusNode.textContent = action === 'optimize' ? 'Optimizing…' : 'Converting…';
+    statusNode.classList.remove('text-status-alert');
+    try {
+      const response = await fetch(`/gallery/api/${action}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || `${action} failed`);
+      if (action === 'optimize') {
+        const saved = Math.max(0, (result.bytesBefore || 0) - (result.bytesAfter || 0));
+        statusNode.textContent = `Optimized ${result.optimized || 0}; saved ${formatBytes(saved)}${result.errors?.length ? `; ${result.errors.length} errors` : ''}`;
+      } else {
+        statusNode.textContent = `Converted ${result.converted || 0} to ${result.format}${result.skipped ? `; ${result.skipped} skipped` : ''}${result.deleted ? `; ${result.deleted} originals removed` : ''}`;
+      }
+      await fetch('/gallery/api/rescan', { method: 'POST' });
+      await loadMedia();
+      return result;
+    } catch (error) {
+      statusNode.textContent = `${action} failed: ${error.message}`;
+      statusNode.classList.add('text-status-alert');
+      return null;
+    }
+  }
+
+  async function convert(kind) {
+    const format = (prompt('Output format: jpg, png, webp, gif, tiff, or bmp', 'webp') || '').trim().toLowerCase();
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif', 'tiff', 'bmp'].includes(format)) return;
+    const payload = kind === 'folder' ? { folder: currentFolder, format } : { path: activeItem?.relpath, format };
+    if (!payload.path && kind !== 'folder') return;
+    if (confirm('Delete original files after each successful conversion?')) payload.delete = true;
+    await runMediaOperation('convert', payload, kind === 'folder' ? dom.folderActionStatus : dom.captionStatus);
+  }
+
+  dom.btnOptimizeImage.addEventListener('click', () => {
+    if (activeItem?.kind === 'image') void runMediaOperation('optimize', { path: activeItem.relpath }, dom.captionStatus);
+  });
+  dom.btnConvertImage.addEventListener('click', () => { if (activeItem?.kind === 'image') void convert('image'); });
+  dom.btnOptimizeFolder.addEventListener('click', () => void runMediaOperation('optimize', { folder: currentFolder }, dom.folderActionStatus));
+  dom.btnConvertFolder.addEventListener('click', () => void convert('folder'));
 
   dom.btnRescan.addEventListener('click', async () => {
     dom.btnRescan.classList.add('opacity-50');
@@ -666,11 +964,13 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
   });
 
   dom.lbFitBtn.addEventListener('click', () => {
+    zoom = 1; rotation = 0; applyImageTransform();
     dom.lbImage.style.maxHeight = '74vh';
     dom.lbImage.style.maxWidth = '100%';
   });
 
   dom.lb100Btn.addEventListener('click', () => {
+    zoom = 1; applyImageTransform();
     dom.lbImage.style.maxHeight = 'none';
     dom.lbImage.style.maxWidth = 'none';
   });
@@ -680,12 +980,22 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let index = 0, value = bytes;
+    while (value >= 1024 && index < units.length - 1) { value /= 1024; index++; }
+    return `${value.toFixed(index ? 1 : 0)} ${units[index]}`;
+  }
+
   function escapeAttr(s) {
     if (!s) return '';
     return String(s).replace(/"/g, '&quot;');
   }
 
   // Initialize
+  if (onlyStarred) { dom.btnFilterStarred.setAttribute('aria-pressed', 'true'); dom.btnFilterStarred.classList.add('text-status-warning'); }
+  if (localStorage.getItem('sdcodex.gallery.autoRefresh') === '1') dom.btnAutoRefresh.click();
   loadStatus();
   loadFolders();
   loadMedia();

@@ -5,11 +5,12 @@ import json
 import mimetypes
 import os
 import re
+import tempfile
 import time
 import zipfile
 from urllib.parse import unquote
 from flask import Blueprint, Response, jsonify, request, send_file
-from PIL import Image
+from PIL import Image, ImageSequence
 
 try:
     from sd_prompt_reader.image_data_reader import ImageDataReader
@@ -28,6 +29,8 @@ IMAGE_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif",
     ".avif", ".heic", ".heif", ".jfif",
 }
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v"}
+MEDIA_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 
 _meta_cache = {}  # (path, mtime) -> dict
 _thumb_cache_dir = None
@@ -152,6 +155,31 @@ def read_sidecar_caption(image_path):
                 return fh.read().strip()
         except Exception:
             pass
+    return ""
+
+
+def read_embedded_caption(image_path):
+    """Read a fallback caption embedded in common PNG text or EXIF fields."""
+    try:
+        with Image.open(image_path) as img:
+            for key in ("Description", "parameters", "Comment", "title"):
+                value = img.info.get(key)
+                if value:
+                    value = str(value).strip()
+                    if value and not value.startswith(("{", "[")):
+                        return value
+            if piexif and img.info.get("exif"):
+                try:
+                    exif = piexif.load(img.info["exif"])
+                    value = exif.get("0th", {}).get(piexif.ImageIFD.ImageDescription, "")
+                    if isinstance(value, bytes):
+                        value = value.decode("utf-8", errors="ignore")
+                    if str(value).strip():
+                        return str(value).strip()
+                except Exception:
+                    pass
+    except Exception:
+        pass
     return ""
 
 
@@ -303,7 +331,7 @@ def gallery_status():
                 total_dirs += len(dirs)
                 for f in files:
                     ext = os.path.splitext(f)[1].lower()
-                    if ext in IMAGE_EXTENSIONS:
+                    if ext in MEDIA_EXTENSIONS:
                         total_files += 1
         except Exception:
             pass
@@ -321,38 +349,37 @@ def list_folders():
     root = resolve_browse_root()
     if not os.path.isdir(root):
         return jsonify({"root": root, "folders": []})
-
+    current = unquote(request.args.get("path", "")).strip("/\\")
+    target = os.path.join(root, current) if current else root
+    if not is_safe_path(root, target) or not os.path.isdir(target):
+        return jsonify({"error": "Folder not found"}), 404
     folders = []
-    # Count root files
-    root_count = 0
+    if current:
+        parent = os.path.dirname(current.rstrip("/\\"))
+        folders.append({"path": parent, "name": "..", "count": 0, "is_parent": True})
+    else:
+        try:
+            direct_count = sum(
+                1 for name in os.listdir(target)
+                if os.path.isfile(os.path.join(target, name))
+                and os.path.splitext(name)[1].lower() in MEDIA_EXTENSIONS
+            )
+        except OSError:
+            direct_count = 0
+        folders.append({"path": "", "name": "All Media", "count": direct_count, "is_root": True})
     try:
-        for item in os.listdir(root):
-            p = os.path.join(root, item)
-            if os.path.isfile(p) and os.path.splitext(item)[1].lower() in IMAGE_EXTENSIONS:
-                root_count += 1
-    except Exception:
-        pass
-
-    folders.append({
-        "path": "",
-        "name": "All Media",
-        "count": root_count,
-        "is_root": True,
-    })
-
-    # Subdirectories
-    try:
-        for entry in sorted(os.listdir(root)):
-            p = os.path.join(root, entry)
+        for entry in sorted(os.listdir(target)):
+            p = os.path.join(target, entry)
             if not os.path.isdir(p) or entry.startswith(".") or entry in ("__pycache__", "node_modules"):
                 continue
             count = 0
-            for sub_root, _, files in os.walk(p):
+            for sub_root, dirs, files in os.walk(p):
+                dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("__pycache__", "node_modules")]
                 for f in files:
-                    if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS:
+                    if os.path.splitext(f)[1].lower() in MEDIA_EXTENSIONS:
                         count += 1
             folders.append({
-                "path": entry,
+                "path": os.path.join(current, entry) if current else entry,
                 "name": entry,
                 "count": count,
                 "is_root": False,
@@ -386,7 +413,7 @@ def list_media():
         if req_folder:
             for item in os.listdir(target_dir):
                 full = os.path.join(target_dir, item)
-                if os.path.isfile(full) and os.path.splitext(item)[1].lower() in IMAGE_EXTENSIONS:
+                if os.path.isfile(full) and os.path.splitext(item)[1].lower() in MEDIA_EXTENSIONS:
                     entries.append((full, req_folder, item))
         else:
             # Walk top level and one subfolder level for "All Media"
@@ -397,7 +424,7 @@ def list_media():
                 if rel_dir == ".":
                     rel_dir = ""
                 for f in files:
-                    if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS:
+                    if os.path.splitext(f)[1].lower() in MEDIA_EXTENSIONS:
                         full = os.path.join(r, f)
                         entries.append((full, rel_dir, f))
     except Exception as e:
@@ -417,12 +444,13 @@ def list_media():
             if not cached:
                 width, height = 0, 0
                 has_wf = False
-                try:
-                    with Image.open(full_path) as img:
-                        width, height = img.size
-                        has_wf = "workflow" in img.info or "prompt" in img.info
-                except Exception:
-                    pass
+                if ext in IMAGE_EXTENSIONS:
+                    try:
+                        with Image.open(full_path) as img:
+                            width, height = img.size
+                            has_wf = "workflow" in img.info or "prompt" in img.info
+                    except Exception:
+                        pass
                 has_txt = os.path.isfile(os.path.splitext(full_path)[0] + ".txt")
                 badge = guess_model_badge(fname, "", width, height)
                 cached = {
@@ -450,6 +478,7 @@ def list_media():
                 "size_fmt": format_bytes(size),
                 "mtime": mtime,
                 "format": ext.lstrip(".").upper(),
+                "kind": "video" if ext in VIDEO_EXTENSIONS else "image",
                 "width": cached["width"],
                 "height": cached["height"],
                 "hasWorkflow": cached["hasWorkflow"],
@@ -491,9 +520,12 @@ def get_media_meta():
     if not target:
         return jsonify({"ok": False, "error": "File not found"}), 404
 
-    caption = read_sidecar_caption(target)
-    sd_info = read_prompts_and_settings(target)
-    wf_json = extract_comfy_workflow(target)
+    is_video = os.path.splitext(target)[1].lower() in VIDEO_EXTENSIONS
+    caption = read_sidecar_caption(target) or (read_embedded_caption(target) if not is_video else "")
+    sd_info = read_prompts_and_settings(target) if not is_video else {
+        "sdPrompt": "", "sdNegative": "", "sdSetting": "", "params": {},
+    }
+    wf_json = extract_comfy_workflow(target) if not is_video else None
 
     stat = os.stat(target)
     width, height = 0, 0
@@ -515,6 +547,7 @@ def get_media_meta():
         "width": width,
         "height": height,
         "format": ext,
+        "kind": "video" if is_video else "image",
         "caption": caption,
         "hasCaption": bool(caption),
         "hasSidecar": os.path.isfile(os.path.splitext(target)[0] + ".txt"),
@@ -724,3 +757,154 @@ def export_workflows():
         as_attachment=True,
         download_name=f"{folder_name}_workflows.zip",
     )
+
+
+def _operation_target(value):
+    root = os.path.realpath(resolve_browse_root())
+    target = os.path.realpath(os.path.join(root, str(value or "").strip("/\\")))
+    if not is_safe_path(root, target):
+        return None
+    return target
+
+
+def _optimize_image(path):
+    ext = os.path.splitext(path)[1].lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
+        raise ValueError("Only JPEG, PNG and WebP images can be optimized")
+    source_size = os.path.getsize(path)
+    temp_path = None
+    try:
+        with Image.open(path) as source:
+            image = source
+            save_format = {".jpg": "JPEG", ".jpeg": "JPEG", ".png": "PNG", ".webp": "WEBP"}[ext]
+            options = {"optimize": True}
+            if save_format == "JPEG":
+                if image.mode not in ("RGB", "L"):
+                    image = image.convert("RGB")
+                # Preserve the source JPEG quantization tables; optimization
+                # should reduce file size without silently lowering quality.
+                options.update(quality="keep", subsampling="keep", exif=source.info.get("exif", b""))
+            elif save_format == "WEBP":
+                options.update(lossless=True, method=6)
+            with tempfile.NamedTemporaryFile(dir=os.path.dirname(path), suffix=ext, delete=False) as tmp:
+                temp_path = tmp.name
+            image.save(temp_path, format=save_format, **options)
+        optimized_size = os.path.getsize(temp_path)
+        if optimized_size < source_size:
+            os.replace(temp_path, path)
+            temp_path = None
+            return source_size, optimized_size, True
+        return source_size, source_size, False
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+@gallery_bp.post("/optimize")
+def optimize_media():
+    data = request.get_json(silent=True) or {}
+    path = _operation_target(data.get("path")) if data.get("path") else None
+    folder = _operation_target(data.get("folder")) if "folder" in data else None
+    if path is None and folder is None:
+        return jsonify({"error": "path or folder is required"}), 400
+    if folder is not None and not os.path.isdir(folder):
+        return jsonify({"error": "Folder not found"}), 404
+    targets = [path] if path else [
+        _operation_target(os.path.relpath(os.path.join(folder, name), os.path.realpath(resolve_browse_root())))
+        for name in sorted(os.listdir(folder))
+        if os.path.isfile(os.path.join(folder, name))
+        and os.path.splitext(name)[1].lower() in {".jpg", ".jpeg", ".png", ".webp"}
+    ]
+    targets = [target for target in targets if target]
+    if path and not os.path.isfile(path):
+        return jsonify({"error": "Image not found"}), 404
+    before = after = optimized = 0
+    errors = []
+    for target in targets:
+        try:
+            old, new, changed = _optimize_image(target)
+            before += old
+            after += new
+            optimized += int(changed)
+        except Exception as exc:
+            errors.append({"file": os.path.basename(target), "error": str(exc)})
+    return jsonify({"ok": not errors, "processed": len(targets) - len(errors), "optimized": optimized,
+                    "bytesBefore": before, "bytesAfter": after, "errors": errors})
+
+
+def _convert_image(path, fmt):
+    ext = {"jpg": ".jpg", "jpeg": ".jpg", "png": ".png", "webp": ".webp", "gif": ".gif", "tiff": ".tiff", "bmp": ".bmp"}[fmt]
+    output = os.path.splitext(path)[0] + ext
+    if os.path.realpath(output) == os.path.realpath(path):
+        return None
+    if os.path.exists(output):
+        output = os.path.splitext(path)[0] + "_converted" + ext
+    if os.path.exists(output):
+        output = os.path.splitext(path)[0] + f"_converted_{int(time.time() * 1000)}" + ext
+    temp_path = None
+    try:
+        with Image.open(path) as source:
+            animated = fmt == "gif" and getattr(source, "is_animated", False)
+            frames = [frame.copy() for frame in ImageSequence.Iterator(source)] if animated else []
+            image = frames[0] if frames else source.copy()
+            if fmt in {"jpg", "jpeg"}:
+                if image.mode not in ("RGB", "L"):
+                    if "A" in image.getbands():
+                        background = Image.new("RGB", image.size, (255, 255, 255))
+                        background.paste(image.convert("RGBA"), mask=image.convert("RGBA").getchannel("A"))
+                        image = background
+                    else:
+                        image = image.convert("RGB")
+            with tempfile.NamedTemporaryFile(dir=os.path.dirname(output), suffix=ext, delete=False) as tmp:
+                temp_path = tmp.name
+            save_args = {}
+            if animated:
+                save_args.update(save_all=True, append_images=frames[1:], duration=source.info.get("duration", 100), loop=source.info.get("loop", 0))
+            image.save(temp_path, format={"jpg": "JPEG", "jpeg": "JPEG", "tiff": "TIFF"}.get(fmt, fmt.upper()), **save_args)
+        os.replace(temp_path, output)
+        temp_path = None
+        return output
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+@gallery_bp.post("/convert")
+def convert_media():
+    data = request.get_json(silent=True) or {}
+    fmt = str(data.get("format", "")).lower()
+    if fmt not in {"jpg", "jpeg", "png", "webp", "gif", "tiff", "bmp"}:
+        return jsonify({"error": "Unsupported output format"}), 400
+    path = _operation_target(data.get("path")) if data.get("path") else None
+    folder = _operation_target(data.get("folder")) if "folder" in data else None
+    if path is None and folder is None:
+        return jsonify({"error": "path or folder is required"}), 400
+    if folder is not None and not os.path.isdir(folder):
+        return jsonify({"error": "Folder not found"}), 404
+    targets = [path] if path else [
+        _operation_target(os.path.relpath(os.path.join(folder, name), os.path.realpath(resolve_browse_root())))
+        for name in sorted(os.listdir(folder))
+        if os.path.isfile(os.path.join(folder, name)) and os.path.splitext(name)[1].lower() in IMAGE_EXTENSIONS
+    ]
+    targets = [target for target in targets if target]
+    if path and (not os.path.isfile(path) or os.path.splitext(path)[1].lower() not in IMAGE_EXTENSIONS):
+        return jsonify({"error": "Image not found or format is unsupported"}), 404
+    converted = skipped = deleted = 0
+    errors = []
+    for source in targets:
+        if os.path.splitext(source)[1].lower() == "." + fmt or (fmt == "jpg" and os.path.splitext(source)[1].lower() == ".jpeg"):
+            skipped += 1
+            continue
+        try:
+            output = _convert_image(source, fmt)
+            if not output:
+                skipped += 1
+                continue
+            converted += 1
+            if data.get("delete"):
+                os.remove(source)
+                deleted += 1
+        except Exception as exc:
+            errors.append({"file": os.path.basename(source), "error": str(exc)})
+    return jsonify({"ok": not errors, "converted": converted, "skipped": skipped, "deleted": deleted,
+                    "format": fmt, "errors": errors})
