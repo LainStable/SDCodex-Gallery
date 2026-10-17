@@ -365,11 +365,11 @@ button, select, .media-error-actions a { touch-action:manipulation; }
 /* Content-sized grid header avoids overlap when sources or breadcrumbs wrap. */
 #grid-header {
     position:relative; inset:auto; flex-shrink:0;
-    margin: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+    margin: max(4px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
 }
 #thumbnail-grid {
     overflow-anchor: none;
-    flex-shrink:0; padding-top:12px;
+    flex-shrink:0; padding-top:6px;
     padding-left:max(12px, env(safe-area-inset-left));
     padding-right:max(12px, env(safe-area-inset-right));
     padding-bottom:max(30px, env(safe-area-inset-bottom));
@@ -1444,9 +1444,9 @@ dialog,
 #gallery-wrapper.viewer-open > #viewer-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 1900;
     display: block;
     pointer-events: auto;
@@ -1462,11 +1462,13 @@ dialog,
 #gallery-wrapper.viewer-open #viewer-modal {
     position: fixed;
     left: 50%;
-    top: 96px;
+    top: 12px;
     transform: translateX(-50%);
     width: min(calc(100% - 40px), 1640px);
-    height: calc(100vh - 96px - 16px);
-    max-height: 94vh;
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
     background: transparent;
     color: var(--text);
     border: 0;
@@ -1498,9 +1500,9 @@ dialog,
    floating panel's rounded corners via the shell's overflow + border-radius. */
 #gallery-wrapper.viewer-open #info-panel {
     position: fixed;
-    top: 96px;
+    top: 12px;
     right: max(20px, calc(50vw - 820px));
-    bottom: 16px;
+    bottom: 12px;
     width: var(--gallery-info-w, 360px);
     background: var(--card-bg);
     color: var(--text);
