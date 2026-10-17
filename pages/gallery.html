@@ -8,10 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rhodium+Libre&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/gallery/api/legacy-ui/styles.css?v=20260906-optimize-progress">
+<link rel="stylesheet" href="/gallery/api/legacy-ui/styles.css?v=20261017-viewer-layer">
 </head>
 <body>
     <div id="gallery-wrapper">
+        <div id="viewer-backdrop" aria-hidden="true"></div>
+        <div id="viewer-modal">
         <div id="media-viewport">
             <div id="media-container">
                 <img id="gallery-image" alt="Gallery Image" draggable="false" style="display:none;">
@@ -149,6 +151,7 @@
         <button id="nav-right" class="nav-arrow" aria-label="Next media"><svg viewBox="0 0 24 24" width="36" height="36"><path fill="currentColor" d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
 
         <div id="progress-container"><div id="progress-bar"></div></div>
+        </div>
 
         <div id="grid-view-container">
             <header id="grid-header" class="overlay ff-header header-nav-container">
@@ -336,6 +339,6 @@
     <p id="config-notice" role="status" hidden></p>
     <script src="/gallery/api/legacy-ui/resilience.js?v=20260831-native-decode-queue"></script>
     <script src="/gallery/api/legacy-ui/settings.js?v=20260904-manifest-refresh-default"></script>
-    <script src="/gallery/api/legacy-ui/app.js?v=20260906-convert-overlap"></script>
+    <script src="/gallery/api/legacy-ui/app.js?v=20261017-viewer-layer"></script>
 </body>
 </html>

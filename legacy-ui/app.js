@@ -54,6 +54,7 @@ function stopViewerSession() {
 function syncViewerModal() {
     if (typeof wrapper === 'undefined' || !wrapper) return;
     wrapper.classList.toggle('viewer-open', !isGridViewActive);
+    if (isGridViewActive) setInfoPanel(false);
 }
 function stopGridSession() {
     stopAlbumPreviews();
@@ -1247,13 +1248,9 @@ function infoRelPath(filepath) {
 }
 
 function setInfoPanel(open) {
-    // The details panel is a permanent fixture of the floating viewer: it can
-    // never be hidden. Ignoring `open === false` keeps it always visible so
-    // there is no grey gap / broken-corner state underneath it.
     if (!infoPanel) return;
-    infoPanel.hidden = false;
-    if (infoPanel.parentElement) infoPanel.parentElement.append(infoPanel);
-    if (btnInfo) btnInfo.setAttribute('aria-pressed', 'true');
+    infoPanel.hidden = !open;
+    if (btnInfo) btnInfo.setAttribute('aria-pressed', String(open));
 }
 
 function toggleInfoPanel() {

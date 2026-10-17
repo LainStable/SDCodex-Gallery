@@ -1497,15 +1497,15 @@ dialog,
    the viewer). Full-height so no grey/gap ever shows under it; clips to the
    floating panel's rounded corners via the shell's overflow + border-radius. */
 #gallery-wrapper.viewer-open #info-panel {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    position: fixed;
+    top: 96px;
+    right: max(20px, calc(50vw - 820px));
+    bottom: 16px;
     width: var(--gallery-info-w, 360px);
     background: var(--card-bg);
     color: var(--text);
     overflow: auto;
-    z-index: 200;
+    z-index: 2001;
     border: 1px solid var(--border);
     border-left: 1px solid var(--border);
     border-radius: 20px 20px 20px 20px;
@@ -1547,11 +1547,16 @@ dialog,
 
 /* Progress bar + help hint constrained to the media column. */
 #gallery-wrapper.viewer-open #progress-container { right: var(--gallery-info-w, 360px); }
-#gallery-wrapper.viewer-open #help-hint { bottom: 20px; left: calc((100% - var(--gallery-info-w, 360px)) / 2); }
+#gallery-wrapper.viewer-open #help-hint {
+    position: fixed;
+    z-index: 2002;
+    bottom: 20px;
+    left: calc(50% - var(--gallery-info-w, 360px) / 2);
+}
 
 /* Warnings / convert dialogs must sit above the floating viewer card. */
 #gallery-wrapper.viewer-open #warning-overlay,
-#gallery-wrapper.viewer-open #convert-overlay { z-index: 1100; }
+#gallery-wrapper.viewer-open #convert-overlay { z-index: 2100; }
 
 /* On narrow screens the info rail shrinks so the media still gets most of the card. */
 @media (max-width: 700px) {
@@ -1561,5 +1566,6 @@ dialog,
     #gallery-wrapper.viewer-open #nav-right,
     #gallery-wrapper.viewer-open #progress-container { right: min(300px, 46vw); }
     #gallery-wrapper.viewer-open #info-panel { width: min(300px, 46vw); border-left: 1px solid var(--border); }
+    #gallery-wrapper.viewer-open #info-panel { right: max(8px, calc(50vw - 410px)); }
     #gallery-wrapper.viewer-open #help-hint { left: calc((100% - min(300px, 46vw)) / 2); }
 }
