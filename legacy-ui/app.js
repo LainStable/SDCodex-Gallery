@@ -780,6 +780,7 @@ const helpHint = $('help-hint');
 const warningOverlay = $('warning-overlay');
 const btnRetryWarning = $('btn-retry-warning');
 const wrapper = $('gallery-wrapper');
+const viewerBackdrop = $('viewer-backdrop');
 const gridViewContainer = $('grid-view-container');
 const thumbnailGrid = $('thumbnail-grid');
 const btnRefreshGrid = $('btn-refresh-grid');
@@ -2899,6 +2900,7 @@ function showMedia(index) {
     setMediaLoading(isHeicFile(filepath) ? 'Preparing HEIC image…' : isImageFile(filepath) ? 'Loading image…' : 'Loading video…');
     videoErrorOverlay.style.display = 'none';
     img.onload = null; img.onerror = null; img.style.display = 'none'; img.src = '';
+    clearFitSize();
     video.onended = null; video.ontimeupdate = null; video.onerror = null;
     video.onwaiting = null; video.onstalled = null; video.oncanplay = null; video.onplaying = null;
     video.style.display = 'none'; video.pause(); video.src = '';
@@ -2960,6 +2962,7 @@ function showMedia(index) {
             if (btnCopyFilename) btnCopyFilename.disabled = !showCopyButton || !clipboardAvailable;
             btnCopyLink.title = clipboardAvailable ? 'Copy displayed image' : 'Copy Image requires HTTPS or a trusted local context';
             setMediaLoading();
+            applyFitSize();
             img.style.display = 'block'; mediaTitle.textContent = displayName;
             applyImageRotation();
             if (slideshowPlaying) startSlideshowTimer();
@@ -3098,19 +3101,41 @@ function applyTransform() {
     container.classList.toggle('grabbing-mode', changed);
 }
 function resetZoomAndPan() { cancelTouchGesture(); zoom = 1.0; panX = 0; panY = 0; applyTransform(); }
+/* The Fit view draws through object-fit:contain inside a box that is always as
+   big as the media pane, so the <img> element (and any border on it) would
+   outline the pane rather than the photo. Size the element to the displayed
+   picture instead — the same math object-fit:contain applies — so the hairline
+   border hugs the media. Zoom, pan and rotation keep transforming the element,
+   so nothing else about the viewer changes. */
+function applyFitSize() {
+    if (!isPhotoActive() || imageMode !== 'fit') return;
+    const pictureWidth = img.naturalWidth, pictureHeight = img.naturalHeight;
+    const paneWidth = viewport.clientWidth, paneHeight = viewport.clientHeight;
+    if (!pictureWidth || !pictureHeight || !paneWidth || !paneHeight) return;
+    // The hairline border sits inside the element box (border-box sizing), so
+    // fit the photo into the pane minus the border: that keeps the border flush
+    // against the picture instead of leaving a sliver of pane showing through.
+    const border = 2;
+    const scale = Math.min((paneWidth - border) / pictureWidth, (paneHeight - border) / pictureHeight);
+    img.style.width = `${Math.max(1, Math.round(pictureWidth * scale)) + border}px`;
+    img.style.height = `${Math.max(1, Math.round(pictureHeight * scale)) + border}px`;
+}
+/* Original-size view (and every non-photo mode) must fall back to the plain
+   auto-sized box the stylesheet defines. */
+function clearFitSize() {
+    img.style.removeProperty('width');
+    img.style.removeProperty('height');
+}
 function applyImageRotation() {
     let fitScale = 1;
     if (imageRotation % 180 && imageMode === 'fit' && img.naturalWidth && img.naturalHeight &&
         viewport.clientWidth && viewport.clientHeight) {
-        // img.clientWidth/clientHeight under mode-fit's width:100%/height:100%
-        // just report the container box, not the actual letterboxed photo
-        // size object-fit:contain renders inside it — using the box size
-        // here understates (or overstates) how large the rotated image can
-        // actually be shown whenever the photo's aspect ratio doesn't match
-        // the viewport's, which is nearly always. Compute the real displayed
-        // content size from the image's natural dimensions instead, then
-        // scale that (swapped, since a 90°/270° rotation swaps footprint
-        // width and height) to fit the viewport.
+        // Compute the displayed content size from the image's natural
+        // dimensions and the viewport rather than reading the element box, so
+        // the rotated footprint always fits the pane however the Fit view is
+        // sized (applyFitSize() hugs the photo; Original size can overflow it).
+        // Scale that content — swapped, since a 90°/270° rotation swaps
+        // footprint width and height — to fit the viewport.
         const contentWidth = Math.min(viewport.clientWidth, viewport.clientHeight * img.naturalWidth / img.naturalHeight);
         const contentHeight = contentWidth * img.naturalHeight / img.naturalWidth;
         // Do not cap this at 1: rotating a portrait into landscape leaves room
@@ -3135,6 +3160,7 @@ function toggleImageMode() {
     if (isPhotoActive()) {
         img.classList.remove('mode-fit', 'mode-original');
         img.classList.add(imageMode === 'fit' ? 'mode-fit' : 'mode-original');
+        if (imageMode === 'fit') applyFitSize(); else clearFitSize();
         resetZoomAndPan();
         applyImageRotation();
     }
@@ -3313,6 +3339,9 @@ function setupEventListeners() {
         btnCaptionThis.addEventListener('click', captionCurrentImage);
     }
     viewport.addEventListener('wheel', handleWheel, { passive: false });
+    viewport.addEventListener('mousedown', handleViewerPointerDown);
+    viewport.addEventListener('click', handleViewerDismissClick);
+    viewerBackdrop.addEventListener('click', handleViewerDismissClick);
     viewport.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
@@ -3401,7 +3430,7 @@ function setupEventListeners() {
         resizeFrame = requestAnimationFrame(() => {
             resizeFrame = null;
             updateGalleryHeaderLayout();
-            if (!isGridViewActive && isPhotoActive()) applyImageRotation();
+            if (!isGridViewActive && isPhotoActive()) { applyFitSize(); applyImageRotation(); }
         });
     });
     window.addEventListener('click', event => {
@@ -3463,6 +3492,25 @@ async function toggleTvMode() {
         showUI();
     }
     savePreferences();
+}
+
+/* Clicking outside the media — the dimmed margins around the floating panel, or
+   the empty pane around the photo — dismisses the viewer and returns to the
+   grid, mirroring the Escape / G shortcut. Panning, zooming and the mobile
+   swipe-to-dismiss all end with a click too, so remember where the pointer went
+   down and ignore anything that travelled across the pane. */
+let viewerPointerDownAt = null;
+function handleViewerPointerDown(event) {
+    viewerPointerDownAt = { x: event.clientX, y: event.clientY };
+}
+function handleViewerDismissClick(event) {
+    const start = viewerPointerDownAt;
+    viewerPointerDownAt = null;
+    if (isGridViewActive || !controlsEnabled || tvModeEnabled) return;
+    const target = event.target;
+    if (target !== viewport && target !== container && target !== viewerBackdrop) return;
+    if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return;
+    renderGridView();
 }
 
 function handleMouseDown(e) {

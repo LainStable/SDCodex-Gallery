@@ -32,7 +32,11 @@ button, select, .media-error-actions a { touch-action:manipulation; }
 #media-container { display:flex; align-items:center; justify-content:center; width:100%; height:100%; transform-origin:center center; will-change:transform; }
 #media-container.dismiss-drag { transition:none; }
 #media-container.dismiss-snapback { transition:transform .18s ease-out,opacity .18s ease-out; }
-#gallery-image,#gallery-video { box-shadow:0 4px 30px rgba(0,0,0,.7); border-radius:4px; }
+/* Faint hairline that hugs the displayed media. In Fit view the <img> box is
+   sized to the picture by applyFitSize() in app.js (instead of the pane-sized
+   object-fit:contain box), so the border follows the photo rather than
+   outlining the whole media pane. */
+#gallery-image,#gallery-video { box-shadow:0 4px 30px rgba(0,0,0,.7); border-radius:4px; border:1px solid rgba(255,255,255,.18); }
 #gallery-image { pointer-events:auto; -webkit-user-drag:none; }
 #media-container.grab-mode { touch-action:none; }
 #gallery-image.mode-original { width:auto; height:auto; max-width:none; max-height:none; object-fit:none; }
