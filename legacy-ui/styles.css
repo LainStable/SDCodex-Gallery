@@ -1375,16 +1375,15 @@ dialog,
     justify-content: center;
 }
 
-/* ── Image details panel (caption / SD prompt / workflow) ─────────────────── */
+/* Details panel: same translucent style as fading bars/overlays */
 #info-panel {
     position: absolute;
     top: var(--ff-shell-gap, 12px);
     right: var(--ff-shell-inset-x, 14px);
     bottom: var(--ff-shell-gap, 12px);
     width: min(380px, 42vw);
-    background: var(--card-bg);
-    color: var(--text);
-    overflow: auto;
+    background: rgba(15, 15, 15, .78);
+    backdrop-filter: blur(12px);
     z-index: 200;
     border-radius: 16px;
     border: 1px solid var(--border);
@@ -1534,7 +1533,8 @@ dialog,
     right: max(20px, calc(50vw - 820px));
     bottom: 12px;
     width: var(--gallery-info-w, 360px);
-    background: var(--card-bg);
+    background: rgba(15, 15, 15, .78);
+    backdrop-filter: blur(12px);
     color: var(--text);
     overflow: auto;
     z-index: 2001;

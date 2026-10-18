@@ -976,9 +976,12 @@ function optimizeRelativePath(file) {
 async function requestOptimization(payload) {
     let response;
     try {
+        const apiKey = localStorage.getItem('civitaiApiKey') || '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
         response = await fetch(OPTIMIZE_ENDPOINT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(payload)
         });
     } catch (error) {
@@ -1018,9 +1021,12 @@ let convertRequest = null;
 async function requestConvert(payload) {
     let response;
     try {
+        const apiKey = localStorage.getItem('civitaiApiKey') || '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
         response = await fetch(CONVERT_ENDPOINT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(payload)
         });
     } catch (error) {
