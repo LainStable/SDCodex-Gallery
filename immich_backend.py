@@ -227,6 +227,10 @@ def _open(server: dict, path: str, method: str = "GET", body=None, timeout: int 
     url = f"{_base_url(server)}/api{path}"
     payload = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=payload, method=method)
+    # Some reverse proxies / WAFs (Cloudflare-style bot checks, allowlists)
+    # reject urllib's default "Python-urllib/…" UA with a bare 403, which then
+    # looks exactly like a rejected API key. Identify as SDCodex instead.
+    req.add_header("User-Agent", "SDCodex/1.0 (+https://github.com/LainStable/SDCodex)")
     req.add_header("x-api-key", server.get("api_key") or "")
     req.add_header("Accept", "*/*")
     if payload is not None:
@@ -535,15 +539,37 @@ def test_server(sid: str):
         return jsonify({"error": "Unknown server"}), 404
     result = {"ok": False, "version": "", "user": "", "error": ""}
     try:
-        version = _json_call(row, "/server/version")
+        try:
+            version = _json_call(row, "/server/version")
+        except ImmichError as exc:
+            if exc.status in (404, 405):
+                # Older servers only expose the legacy version route.
+                version = _json_call(row, "/server-info/version")
+            else:
+                raise
         result["version"] = version.get("major", "") if isinstance(version, dict) else str(version or "")
         if isinstance(version, dict) and version.get("major"):
             result["version"] = f"v{version.get('major')}.{version.get('minor')}.{version.get('patch')}"
-        result["user"] = _probe_identity(row)
+        try:
+            result["user"] = _probe_identity(row)
+        except ImmichError as exc:
+            if exc.status in (401, 403):
+                raise ImmichError(
+                    "API key rejected \u2014 check it in Immich \u2192 User settings \u2192 API Keys. "
+                    "If the key is correct, a reverse proxy in front of Immich may be "
+                    "stripping the x-api-key header.", exc.status)
+            raise
         result["ok"] = True
     except ImmichError as exc:
-        result["error"] = ("API key rejected \u2014 check it in Immich \u2192 User settings \u2192 API Keys"
-                           if exc.status in (401, 403) else str(exc))
+        if exc.status in (401, 403):
+            # /server/version needs no key: a refusal here means something in
+            # front of Immich (proxy / WAF / allowlist) blocked the API call,
+            # not that the key is wrong.
+            result["error"] = (f"Immich refused the request (HTTP {exc.status}). "
+                               "Check any reverse proxy, firewall or bot protection "
+                               "in front of Immich \u2014 it may be blocking API clients.")
+        else:
+            result["error"] = str(exc)
     with _settings_lock:
         store = _load_settings()
         for entry in store["servers"]:
