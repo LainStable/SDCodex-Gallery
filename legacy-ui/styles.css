@@ -1367,6 +1367,8 @@ dialog,
     box-shadow: 0 8px 26px var(--shadow-soft, rgba(0,0,0,.4));
     padding: 16px 18px;
     font-family: inherit;
+    transition: opacity .35s ease;
+    opacity: 1;
 }
 #info-panel .info-panel-head {
     display: flex;

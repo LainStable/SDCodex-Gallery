@@ -1251,7 +1251,13 @@ function infoRelPath(filepath) {
 function setInfoPanel(open) {
     if (!infoPanel) return;
     infoPanel.hidden = !open;
+    if (open) {
+        infoPanel.classList.remove('ui-hidden');
+    } else {
+        infoPanel.classList.add('ui-hidden');
+    }
     if (btnInfo) btnInfo.setAttribute('aria-pressed', String(open));
+    if (open) resetIdleTimer();
 }
 
 function toggleInfoPanel() {
@@ -3748,18 +3754,20 @@ function showUI() {
     progressContainer.classList.remove('ui-hidden');
     navLeft.classList.remove('ui-hidden'); navRight.classList.remove('ui-hidden');
     helpHint.classList.remove('ui-hidden');
+    if (infoPanel && !infoPanel.hidden) infoPanel.classList.remove('ui-hidden');
     document.body.classList.remove('cursor-hidden');
     resetIdleTimer();
 }
 function hideUI() {
     if (isGridViewActive || isDragging || isPinching || mediaFailed) return;
     if (document.activeElement?.matches?.(':focus-visible') &&
-        document.activeElement?.closest?.('#overlay-header, .nav-arrow')) return;
+        document.activeElement?.closest?.('#overlay-header, .nav-arrow, #info-panel')) return;
     uiVisible = false;
     $('overlay-header').classList.add('ui-hidden');
     progressContainer.classList.add('ui-hidden');
     navLeft.classList.add('ui-hidden'); navRight.classList.add('ui-hidden');
     helpHint.classList.add('ui-hidden');
+    if (infoPanel && !infoPanel.hidden) infoPanel.classList.add('ui-hidden');
     document.body.classList.add('cursor-hidden');
 }
 function resetIdleTimer() {
@@ -3772,6 +3780,7 @@ function resetIdleTimer() {
         progressContainer.classList.remove('ui-hidden');
         navLeft.classList.remove('ui-hidden'); navRight.classList.remove('ui-hidden');
         helpHint.classList.remove('ui-hidden');
+        if (infoPanel && !infoPanel.hidden) infoPanel.classList.remove('ui-hidden');
         document.body.classList.remove('cursor-hidden');
     }
     idleTimer = setTimeout(hideUI, tvModeEnabled ? 1800 : 3000);
