@@ -406,6 +406,67 @@ function usesPublishedManifest() {
     return activeSource?.discoveryMode !== 'directory' && Boolean(activeSource?.manifestUrl);
 }
 
+// ── Remote Immich sources ───────────────────────────────────────────────────
+// An Immich server is advertised by the backend as a FolderFrame source whose
+// URL lives under /gallery/api/immich/<id>/, so everything below only needs the
+// server id from the active source to talk to the right endpoints.
+function immichSourceId(source = activeSource) {
+    const match = /\/gallery\/api\/immich\/([A-Za-z0-9_-]+)\//.exec(source?.url || '');
+    return match ? match[1] : '';
+}
+
+function isRemoteSource(source = activeSource) {
+    return Boolean(immichSourceId(source));
+}
+
+function immichOriginalUrl(filepath) {
+    const sid = immichSourceId();
+    if (!sid) return null;
+    const rel = infoRelPath(filepath);
+    if (!rel.file) return null;
+    const album = rel.folder ? encodeURIComponent(rel.folder) + '/' : '';
+    return `/gallery/api/immich/${sid}/original/${album}${encodeURIComponent(rel.file)}`;
+}
+
+// The core sidebar lists plugin pages, so the source switcher lives here: a
+// rail of every configured source (local disk plus one entry per Immich
+// server) named by the label set in Gallery → Settings.
+function renderSourceRail() {
+    const rail = $('source-rail');
+    const list = $('source-rail-list');
+    if (!rail || !list) return;
+    const sources = galleryConfig?.sources || [];
+    const show = sources.length > 1;
+    document.body.classList.toggle('has-source-rail', show);
+    rail.hidden = !show;
+    if (!show) { list.replaceChildren(); return; }
+    list.replaceChildren();
+    sources.forEach(source => {
+        const sid = immichSourceId(source);
+        const active = source.id === activeSource?.id;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'source-rail-item' + (active ? ' is-active' : '');
+        button.setAttribute('aria-pressed', String(active));
+        button.title = `${source.label} — ${sid ? 'Immich server' : 'local disk'}`;
+        const name = document.createElement('span');
+        name.className = 'source-rail-name';
+        name.textContent = source.label;
+        const kind = document.createElement('span');
+        kind.className = 'source-rail-kind';
+        kind.textContent = sid ? 'Immich' : 'Local';
+        button.append(name, kind);
+        button.addEventListener('click', () => {
+            if (active) return;
+            const url = new URL(location.href);
+            url.searchParams.set('source', source.id);
+            url.searchParams.set('album', '');
+            location.assign(url.href);
+        });
+        list.appendChild(button);
+    });
+}
+
 function persistentManifestError(message, cause = null) {
     const error = new Error(message);
     error.name = 'PersistentManifestError';
@@ -1139,6 +1200,7 @@ async function loadConfiguration() {
     });
     selector.value = activeSource.id;
     $('source-control').hidden = galleryConfig.sources.length < 2;
+    renderSourceRail();
     document.querySelectorAll('.configured-source-path').forEach(element => { element.textContent = activeSource.path; });
     warnings.push(...resolved.warnings);
     if (warnings.length) {
@@ -1197,7 +1259,7 @@ function updateControlStates() {
         ? 'Currently showing starred media — click to show all'
         : `Show only starred media${starredCount ? ` (${starredCount} starred)` : ''}`;
     btnStars.setAttribute('aria-label', btnStars.title);
-    const folderOptimizeVisible = !starFilterMode && galleryViewMode === 'folders';
+    const folderOptimizeVisible = !starFilterMode && galleryViewMode === 'folders' && !isRemoteSource();
     btnOptimizeFolder.hidden = !folderOptimizeVisible;
     if (!optimizeCapable) {
         btnOptimizeFolder.disabled = true;
@@ -1209,7 +1271,7 @@ function updateControlStates() {
             : (isScanning ? 'Wait for the folder scan to finish' : 'Optimize every JPEG and PNG directly in this folder');
     }
     btnOptimizeFolder.setAttribute('aria-label', btnOptimizeFolder.title);
-    const folderConvertVisible = !starFilterMode && galleryViewMode === 'folders';
+    const folderConvertVisible = !starFilterMode && galleryViewMode === 'folders' && !isRemoteSource();
     btnConvertFolder.hidden = !folderConvertVisible;
     if (!convertCapable) {
         btnConvertFolder.disabled = true;
@@ -1386,8 +1448,12 @@ async function loadMediaMetadata(filepath, { force = false } = {}) {
     const controller = new AbortController();
     galleryMetaSession = { controller };
     const query = new URLSearchParams({ folder: rel.folder, file: rel.file });
+    // Remote Immich sources read their details from the server's own API; the
+    // local endpoint would look for the file on disk.
+    const sid = immichSourceId();
+    const metaUrl = sid ? `/gallery/api/immich/${sid}/meta?${query}` : `/gallery/api/meta?${query}`;
     try {
-        const response = await resilience.request(`/gallery/api/meta?${query}`, {
+        const response = await resilience.request(metaUrl, {
             signal: controller.signal, timeout: 15000, cache: 'no-store', body: 'json'
         });
         const meta = response;
@@ -1436,8 +1502,26 @@ function updateMediaActions(filepath, filename, forceVideo = false) {
     btnCopyLink.title = !copyable ? 'Copy Image is unavailable for video'
         : !clipboardAvailable ? 'Copy Image requires HTTPS or a trusted local context'
         : 'Copy displayed image after it loads';
+    // Optimize/Convert rewrite files on disk, which is impossible for an
+    // asset living on an Immich server: hide them and keep Download pointed at
+    // the untouched original instead of the preview the viewer proxies.
+    const remote = isRemoteSource();
+    btnOptimize.hidden = remote;
+    btnConvert.hidden = remote;
+    if (remote) {
+        btnOptimize.disabled = true;
+        btnOptimize.title = 'Optimize is available for local files only';
+        btnOptimize.setAttribute('aria-label', btnOptimize.title);
+        btnConvert.disabled = true;
+        btnConvert.title = 'Convert is available for local files only';
+        btnConvert.setAttribute('aria-label', btnConvert.title);
+        const original = immichOriginalUrl(filepath);
+        if (original) btnDownload.href = original;
+    }
     const optimizable = isOptimizableImage(filepath);
-    if (!optimizeCapable) {
+    if (remote) {
+        // handled above — local-only actions never apply to a remote asset
+    } else if (!optimizeCapable) {
         btnOptimize.disabled = true;
         btnOptimize.title = 'Optimization is disabled on this server';
         btnOptimize.setAttribute('aria-label', 'Optimization is disabled on this server');

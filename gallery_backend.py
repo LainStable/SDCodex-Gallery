@@ -70,10 +70,34 @@ def _folderframe_listing(root, target):
     )
 
 
+def _folderframe_sources():
+    """Local disk plus one FolderFrame source per enabled Immich server.
+
+    Remote servers are advertised as ordinary web directories so the gallery's
+    source switcher, breadcrumbs, grid and viewer need no remote-specific code.
+    """
+    sources = [{"id": "media", "label": "Local", "path": "/gallery/api/browse/", "discoveryMode": "directory"}]
+    try:
+        from immich_backend import enabled_servers
+
+        for row in enabled_servers():
+            base = f"/gallery/api/immich/{row['id']}"
+            sources.append({
+                "id": row["id"],
+                "label": row["name"],
+                "path": f"{base}/browse/",
+                "thumbnailPath": f"{base}/thumb/",
+                "discoveryMode": "directory",
+            })
+    except Exception:
+        pass
+    return sources
+
+
 @gallery_bp.get("/folderframe.config.json")
 def folderframe_config():
     return jsonify({
-        "sources": [{"id": "media", "label": "Media", "path": "/gallery/api/browse/", "discoveryMode": "directory"}],
+        "sources": _folderframe_sources(),
         "defaults": {"source": "media", "album": "", "view": "folders", "sort": "filename", "interval": 5, "imageMode": "fit", "shuffle": False, "autoRefresh": True, "tvMode": False, "autoplay": False, "controls": True, "showFilenames": True, "showDownloadButton": True, "showCopyButton": True},
         "index": {"refreshInterval": 120},
         "embed": {"refreshInterval": 300, "rememberPreferences": False},

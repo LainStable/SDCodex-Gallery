@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rhodium+Libre&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/gallery/api/legacy-ui/styles.css?v=20261018-viewer-hairline">
+<link rel="stylesheet" href="/gallery/api/legacy-ui/styles.css?v=20261018-immich">
 </head>
 <body>
     <div id="gallery-wrapper">
@@ -154,6 +154,10 @@
         </div>
 
         <div id="grid-view-container">
+            <aside id="source-rail" class="source-rail" aria-label="Gallery sources" hidden>
+                <p class="source-rail-title">Sources</p>
+                <div id="source-rail-list"></div>
+            </aside>
             <header id="grid-header" class="overlay ff-header header-nav-container">
                 <div class="grid-header-main header-nav ff-header-left ff-pill">
                     <button id="btn-gallery-home" class="brand-home" type="button" aria-label="Gallery root" title="Gallery root">
@@ -337,6 +341,6 @@
     <p id="config-notice" role="status" hidden></p>
     <script src="/gallery/api/legacy-ui/resilience.js?v=20260831-native-decode-queue"></script>
     <script src="/gallery/api/legacy-ui/settings.js?v=20260904-manifest-refresh-default"></script>
-    <script src="/gallery/api/legacy-ui/app.js?v=20261018-viewer-hairline"></script>
+    <script src="/gallery/api/legacy-ui/app.js?v=20261018-immich"></script>
 </body>
 </html>

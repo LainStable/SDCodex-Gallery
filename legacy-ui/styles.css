@@ -1178,6 +1178,24 @@ button, select, .media-error-actions a { touch-action:manipulation; }
    follows the app's theme in both light and dark mode.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Palette defaults. This page is rendered as a standalone document inside the
+   core's plugin iframe, so the core's variables are NOT inherited (they live on
+   the parent document's <html>). Declaring the same names here keeps every
+   var(--bg)/var(--card-bg) reference resolvable; an embedder that does set them
+   on <html> still wins, because those declarations come later in the cascade. */
+:root {
+    --bg:             #050505;
+    --card-bg:        rgba(24,24,27,.92);
+    --text:           #f5f5f5;
+    --text-secondary: #a1a1aa;
+    --border:         rgba(255,255,255,.14);
+    --primary:        #c0c1ff;
+    --info:           #4cd7f6;
+    --danger:         #ef4444;
+    --warning:        #f59e0b;
+    color-scheme: dark;
+}
+
 /* ── Remap the FolderFrame palette onto the core app palette ─────────────── */
 :root {
     --ff-bg:         var(--bg);
@@ -1216,7 +1234,13 @@ button, select, .media-error-actions a { touch-action:manipulation; }
     --ff-glow-active: rgba(255,255,255,.32);
 }
 
-/* ── Shell: fill everything below the core navbar ─────────────────────────── */
+/* ── Shell: fill the whole plugin frame ─────────────────────────────────────
+   SDCodex renders every plugin page inside its own content area, below the
+   core topbar (the page is an iframe). No part of the shell lives inside this
+   document, so the gallery must start at the very top of the frame —
+   reserving a navbar band here only left a dead gap above the toolbar.
+   --ff-navbar-h stays overridable for embedders that do render a first-party
+   bar in the same document. */
 html, body { height: auto; overflow: auto; }
 body {
     min-height: 100vh;
@@ -1226,7 +1250,7 @@ body {
 
 #gallery-wrapper {
     position: fixed;
-    top: var(--ff-navbar-h, 60px);
+    top: var(--ff-navbar-h, 0px);
     left: 0;
     right: 0;
     bottom: 0;
@@ -1576,4 +1600,70 @@ dialog,
     #gallery-wrapper.viewer-open #info-panel { width: min(300px, 46vw); border-left: 1px solid var(--border); }
     #gallery-wrapper.viewer-open #info-panel { right: max(8px, calc(50vw - 410px)); }
     #gallery-wrapper.viewer-open #help-hint { left: calc((100% - min(300px, 46vw)) / 2); }
+}
+
+/* ── Source rail ─────────────────────────────────────────────────────────────
+   The core app's sidebar only lists plugin pages, so the gallery exposes its
+   own source switcher: one entry for the local disk and one per Immich server
+   (each labelled with the name set in Gallery → Settings). */
+.source-rail {
+    position: fixed;
+    top: 12px;
+    left: max(12px, env(safe-area-inset-left));
+    bottom: 12px;
+    width: 176px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    overflow-y: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+}
+.source-rail[hidden] { display: none; }
+.source-rail-title {
+    margin: 2px 6px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.source-rail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: background .18s, border-color .18s;
+}
+.source-rail-item:hover { background: var(--ff-glow-hover, rgba(128,128,135,.3)); }
+.source-rail-item.is-active {
+    background: rgba(99,102,241,.18);
+    border-color: rgba(99,102,241,.45);
+    color: #fff;
+}
+.source-rail-name { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.source-rail-kind { font-family: ui-monospace, monospace; font-size: 10px; color: var(--text-secondary); }
+.source-rail-item.is-active .source-rail-kind { color: #c7d2fe; }
+
+/* Keep the floating toolbars and the grid clear of the rail when it is shown. */
+body.has-source-rail #grid-header { margin-left: calc(176px + 24px); }
+body.has-source-rail #thumbnail-grid { padding-left: calc(176px + 12px); }
+body.has-source-rail #source-control { display: none; }
+
+@media (max-width: 900px) {
+    .source-rail { display: none; }
+    body.has-source-rail #grid-header { margin-left: max(12px, env(safe-area-inset-left)); }
+    body.has-source-rail #thumbnail-grid { padding-left: max(12px, env(safe-area-inset-left)); }
 }

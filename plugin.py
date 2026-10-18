@@ -9,12 +9,23 @@ if plugin_dir not in sys.path:
 
 
 def init_plugin(app, db, plugin_info=None):
-    """Register the gallery_bp blueprint and a legacy /gallery2 alias."""
+    """Register the gallery, Immich and legacy /gallery2 blueprints."""
     from gallery_backend import gallery_bp
 
     if "gallery_bp" not in app.blueprints:
         app.register_blueprint(gallery_bp)
         app.logger.info("SDCodex Gallery mounted at /gallery/api")
+
+    # Remote Immich servers are proxied by the core so the API key stays on the
+    # server and no CORS cooperation is needed from Immich.
+    try:
+        from immich_backend import immich_bp
+
+        if "gallery_immich" not in app.blueprints:
+            app.register_blueprint(immich_bp)
+            app.logger.info("SDCodex Gallery Immich bridge mounted at /gallery/api/immich")
+    except Exception:
+        app.logger.warning("SDCodex Gallery: Immich bridge unavailable", exc_info=True)
 
     # Legacy compatibility: ComfyUI custom nodes that still hit /gallery2/api/*
     # are silently re-routed to the same handlers via a second blueprint mount.
