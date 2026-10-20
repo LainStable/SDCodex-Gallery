@@ -294,13 +294,24 @@
             <div class="info-panel-head">
                 <span class="info-panel-title">Details</span>
                 <button id="btn-info-close" class="btn btn-secondary ff-btn ff-btn-icon" type="button" aria-label="Close details" title="Close details">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M5.33 6.5l1.34 1.34L8 12.67l1.34-1.34L5.33 6.5zM13.33 6.5l-1.34 1.34L16 12.67l-1.34-1.34z"/></svg>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </button>
             </div>
             <div id="info-file-name" class="info-section info-file-name"></div>
+            <div class="info-actions" style="margin-top:10px; display:flex; gap:8px;">
+                <button id="btn-info-convert" class="btn btn-secondary" type="button" style="flex:1; height:32px; font-size:12px;">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" style="margin-right:4px;"><path fill="currentColor" d="M6.99 11 3 15l3.99 4v-3H13v-2H6.99v-3zM21 9l-3.99-4v3H11v2h6.01v3L21 9z"/></svg> Convert
+                </button>
+            </div>
             <div class="info-loading" id="info-loading" role="status">Reading file metadata…</div>
             <div class="info-section-title">Caption</div>
             <div id="info-caption" class="info-text info-caption"></div>
+            <div id="caption-this-section" hidden style="margin-top:8px;">
+                <button id="btn-caption-this" class="btn btn-secondary caption-this-btn" type="button" aria-label="Caption this image" style="width:100%; height:32px; font-size:12px;">
+                    <span id="caption-this-label">Caption this Image</span>
+                </button>
+                <div id="caption-this-status" class="info-text" style="display:none; font-size:11px; margin-top:4px;"></div>
+            </div>
             <div class="info-section-title">SD Prompt</div>
             <div id="info-sd-prompt" class="info-text info-sd"></div>
             <div class="info-section-title">SD Negative Prompt</div>
@@ -309,41 +320,38 @@
             <div id="info-sd-setting" class="info-text info-setting"></div>
             <div id="info-workflow-section" class="info-workflow-section" hidden>
                 <div class="info-section-title">ComfyUI Workflow</div>
-                <button id="btn-info-download-workflow" class="btn btn-secondary" type="button">Download Workflow (.json)</button>
+                <button id="btn-info-download-workflow" class="btn btn-secondary" type="button" style="width:100%; height:32px; font-size:12px; margin-top:6px;">Download Workflow (.json)</button>
             </div>
-            <div id="caption-this-section" hidden>
-                <button id="btn-caption-this" class="caption-this-btn" type="button" aria-label="Caption this image"><span id="caption-this-label">Caption this Image</span></button>
-                <div id="caption-this-status" class="info-text" style="display:none;"></div>
-            </div>
-            <div class="info-section-title">File</div>
+            <div class="info-section-title">File Details</div>
             <div id="info-stats" class="info-stats"></div>
-            <div class="info-section-title">EXIF</div>
+            <div class="info-section-title">EXIF Data</div>
             <div id="info-exif" class="info-text info-exif"></div>
             <div id="info-error" class="info-error" hidden></div>
             <style>
                 #info-panel { position:absolute; top:64px; right:0; bottom:0; width:min(360px, 40vw);
-                    background:rgba(5,5,5,.92); color:#eee; overflow:auto; z-index:200;
-                    box-shadow:0 0 22px rgba(0,0,0,.6); border-left:1px solid #333;
+                    background:var(--card-bg, #181b25); color:var(--text, #dfe2ef); overflow:auto; z-index:200;
+                    box-shadow:0 0 22px rgba(0,0,0,.6); border-left:1px solid var(--border, rgba(255,255,255,.1));
                     padding:14px 16px; font-family:inherit; }
                 #info-panel .info-panel-head { display:flex; justify-content:space-between; align-items:center; }
-                #info-panel .info-panel-title { font-size:15px; font-weight:600; letter-spacing:.3px; }
-                #info-panel button { background:#262626; color:#eee; border:1px solid #444; border-radius:6px;}
-                #info-panel .info-section-title { margin-top:12px; font-size:11px; font-weight:600; text-transform:uppercase;
-                    letter-spacing:.5px; color:#9a9a9a; }
-                #info-panel .info-text { margin-top:4px; white-space:pre-wrap; word-break:break-word; font-size:13px; line-height:1.4; }
-                #info-panel .info-caption { color:#ddd; }
-                #info-panel .info-sd { color:#b8b8b8; font-style:italic; }
-                #info-panel .info-setting { color:#9a9a9a; font-family:ui-monospace, monospace; }
-                #info-panel .info-file-name { font-size:12px; color:#aaa; word-break:break-all; }
-                #info-panel .info-loading { color:#888; font-size:12px; padding-top:8px; }
-                #info-panel .info-error { color:#e06565; font-size:12px; margin-top:12px; }
+                #info-panel .info-panel-title { font-size:15px; font-weight:600; letter-spacing:.3px; color:var(--text, #fff); }
+                #info-panel button { background:rgba(255,255,255,.05); color:var(--text, #eee); border:1px solid var(--border, rgba(255,255,255,.15)); border-radius:6px; cursor:pointer; }
+                #info-panel button:hover:not(:disabled) { background:rgba(255,255,255,.1); color:#fff; }
+                #info-panel .info-section-title { margin-top:14px; font-size:10px; font-weight:700; text-transform:uppercase;
+                    letter-spacing:.6px; color:var(--text-secondary, #908fa0); }
+                #info-panel .info-text { margin-top:4px; white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.4; color:var(--text, #dfe2ef); }
+                #info-panel .info-caption { color:var(--text, #dfe2ef); }
+                #info-panel .info-sd { color:var(--text-secondary, #c7c4d7); font-style:italic; }
+                #info-panel .info-setting { color:var(--text-secondary, #908fa0); font-family:ui-monospace, monospace; }
+                #info-panel .info-file-name { font-size:12px; font-family:ui-monospace, monospace; color:var(--text-secondary, #aaa); word-break:break-all; }
+                #info-panel .info-loading { color:var(--text-secondary, #888); font-size:12px; padding-top:8px; }
+                #info-panel .info-error { color:#ef4444; font-size:12px; margin-top:12px; }
                 #info-panel .info-workflow-section button { margin-top:6px; }
                 #info-panel .info-stats { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
                 #info-panel .info-stat { display:inline-flex; gap:6px; align-items:baseline;
-                    background:#1c1c1c; border:1px solid #333; border-radius:4px;
-                    padding:2px 8px; font-family:ui-monospace, monospace; font-size:12px; color:#e6e6e6; }
-                #info-panel .info-stat-label { color:#8b8b8b; text-transform:uppercase; font-size:10px; letter-spacing:.4px; }
-                #info-panel .info-exif { color:#9a9a9a; font-family:ui-monospace, monospace; font-size:12px; }
+                    background:rgba(255,255,255,.04); border:1px solid var(--border, rgba(255,255,255,.1)); border-radius:4px;
+                    padding:3px 8px; font-family:ui-monospace, monospace; font-size:11px; color:var(--text, #dfe2ef); }
+                #info-panel .info-stat-label { color:var(--text-secondary, #908fa0); text-transform:uppercase; font-size:9px; letter-spacing:.4px; }
+                #info-panel .info-exif { color:var(--text-secondary, #c7c4d7); font-family:ui-monospace, monospace; font-size:11px; background:rgba(0,0,0,.2); padding:8px; border-radius:4px; border:1px solid var(--border, rgba(255,255,255,.08)); }
             </style>
         </aside>
     </div>

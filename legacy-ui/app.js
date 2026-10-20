@@ -465,6 +465,15 @@ window.addEventListener('message', (event) => {
     if (event.origin !== window.location.origin) return;
     const data = event.data;
     if (data && data.type === 'sdcodex:theme') applyAppTheme(data.theme);
+    if (data && data.type === 'sdcodex:set-source' && data.sourceId) {
+        const source = (galleryConfig?.sources || []).find(s => s.id === data.sourceId);
+        if (source && source.id !== activeSource?.id) {
+            const url = new URL(location.href);
+            url.searchParams.set('source', source.id);
+            url.searchParams.set('album', '');
+            location.assign(url.href);
+        }
+    }
 });
 
 function renderSourceRail() {
@@ -472,6 +481,13 @@ function renderSourceRail() {
     const list = $('source-rail-list');
     if (!rail || !list) return;
     const sources = galleryConfig?.sources || [];
+    try {
+        window.parent.postMessage({
+            type: 'sdcodex:gallery-sources',
+            activeSourceId: activeSource?.id,
+            sources: sources
+        }, window.location.origin);
+    } catch (e) {}
     // The rail is the only source switcher now, so keep it visible even when
     // the local disk is the sole source.
     const show = sources.length >= 1;
@@ -864,6 +880,7 @@ let galleryMetaSession = null;
 const btnViewerStar = $('btn-viewer-star');
 const btnOptimize = $('btn-optimize');
 const btnConvert = $('btn-convert');
+const btnInfoConvert = $('btn-info-convert');
 const btnViewerOptions = $('btn-viewer-options');
 const viewerOptionsMenu = $('viewer-options-menu');
 const imageModeText = $('image-mode-text');
@@ -1194,13 +1211,25 @@ async function loadCaptionCapability() {
     if (!section) return;
     try {
         const response = await fetch('/comfy-caption/api/status', { cache: 'no-store', credentials: 'same-origin' });
-        if (!response.ok) return;
-        const status = await response.json();
-        captionCapable = Boolean(status && status.ok !== false);
-        if (captionCapable) section.hidden = false;
+        if (response.ok) {
+            const status = await response.json();
+            captionCapable = Boolean(status && status.ok !== false);
+        }
     } catch (error) {
         captionCapable = false;
     }
+    if (!captionCapable) {
+        try {
+            const r = await fetch('/api/plugins', { cache: 'no-store', credentials: 'same-origin' });
+            if (r.ok) {
+                const list = await r.json();
+                if (Array.isArray(list) && list.some(p => p.id === 'comfy-caption' || p.id === 'caption')) {
+                    captionCapable = true;
+                }
+            }
+        } catch (e) {}
+    }
+    if (captionCapable && section) section.hidden = false;
 }
 
 async function loadOptimizeCapability() {
@@ -1623,6 +1652,10 @@ function updateMediaActions(filepath, filename, forceVideo = false) {
         btnConvert.disabled = !convertible;
         btnConvert.setAttribute('aria-label', convertible ? `Convert ${filename}` : 'Convert is only available for image files');
         btnConvert.title = convertible ? 'Convert this image to another type' : 'Convert is only available for image files';
+    }
+    if (btnInfoConvert) {
+        btnInfoConvert.disabled = !convertible || !convertCapable || operationInFlight;
+        btnInfoConvert.title = btnConvert.title;
     }
 }
 
@@ -3499,6 +3532,13 @@ function setupEventListeners() {
     btnInfoDownloadWorkflow?.addEventListener('click', () => downloadCurrentWorkflow());
     if (btnCaptionThis) {
         btnCaptionThis.addEventListener('click', captionCurrentImage);
+    }
+    if (btnInfoConvert) {
+        btnInfoConvert.addEventListener('click', () => {
+            const file = mediaFiles[currentIndex];
+            if (!file || !isImageFile(file) || btnInfoConvert.disabled || !convertCapable || operationInFlight) return;
+            openConvertPrompt('file', optimizeRelativePath(file));
+        });
     }
     viewport.addEventListener('wheel', handleWheel, { passive: false });
     viewport.addEventListener('mousedown', handleViewerPointerDown);
