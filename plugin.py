@@ -35,10 +35,11 @@ def init_plugin(app, db, plugin_info=None):
             gallery_status, list_folders, list_media, get_media_file,
             get_media_meta, save_caption, download_workflow, rescan_cache,
             export_workflows, caption_target, get_prompt,
-            browse_folders, browse_roots,
+            browse_folders, browse_roots, require_login,
         )
 
         g2 = Blueprint("gallery2_compat", __name__, url_prefix="/gallery2/api")
+        g2.before_request(require_login)
         g2.add_url_rule("/status",                "g2_status",          gallery_status)
         g2.add_url_rule("/folders",               "g2_folders",         list_folders)
         g2.add_url_rule("/media",                 "g2_media",           list_media)

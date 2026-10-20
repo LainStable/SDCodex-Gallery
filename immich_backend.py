@@ -216,6 +216,14 @@ def _write_blocked() -> bool:
         return True
 
 
+@immich_bp.before_request
+def _immich_auth_guard():
+    """Every Immich route (including reads and proxied originals) needs a session."""
+    if _write_blocked():
+        return jsonify({"error": "unauthorized"}), 401
+    return None
+
+
 # ---------------------------------------------------------------- client ---
 
 def _base_url(server: dict) -> str:

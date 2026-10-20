@@ -25,6 +25,35 @@ except Exception:
 
 gallery_bp = Blueprint("gallery_bp", __name__, url_prefix="/gallery/api")
 
+
+def _core_session_missing() -> bool:
+    """True when SDCodex is running and the request has no valid session.
+
+    Standalone plugin deployments have no core auth module, so they keep
+    working unrestricted (as before).
+    """
+    try:
+        from sdcodex import auth as core_auth
+    except Exception:
+        return False
+    try:
+        return core_auth.current_user() is None
+    except Exception:
+        return True
+
+
+def require_login():
+    """Blueprint guard shared by /gallery/api and the /gallery2 alias."""
+    if _core_session_missing():
+        return jsonify({"error": "unauthorized"}), 401
+    return None
+
+
+@gallery_bp.before_request
+def _gallery_auth_guard():
+    return require_login()
+
+
 IMAGE_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif",
     ".avif", ".heic", ".heif", ".jfif",
