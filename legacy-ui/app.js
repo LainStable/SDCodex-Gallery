@@ -431,12 +431,50 @@ function immichOriginalUrl(filepath) {
 // The core sidebar lists plugin pages, so the source switcher lives here: a
 // rail of every configured source (local disk plus one entry per Immich
 // server) named by the label set in Gallery → Settings.
+// ── Core theme bridge ───────────────────────────────────────────────
+// The gallery is embedded in the SDCodex shell as an iframe, so it cannot
+// inherit the app's CSS custom properties. The core posts its live palette
+// (CSS variable values) and we re-declare the tokens this sheet consumes.
+function rgbChannels(value, alpha) {
+    const parts = String(value || '').trim().split(/\s+/);
+    if (parts.length !== 3 || !parts.every(part => /^\d+$/.test(part))) return '';
+    return alpha == null ? `rgb(${parts.join(' ')})` : `rgba(${parts.join(',')},${alpha})`;
+}
+
+function applyAppTheme(theme) {
+    if (!theme || !theme.vars) return;
+    const root = document.documentElement;
+    const vars = theme.vars;
+    const mode = theme.mode === 'light' ? 'light' : 'dark';
+    root.dataset.theme = mode;
+    root.style.colorScheme = mode;
+    const set = (name, value) => { if (value) root.style.setProperty(name, value); };
+    set('--bg', rgbChannels(vars.bg));
+    set('--card-bg', rgbChannels(vars.card));
+    set('--text', rgbChannels(vars.ink));
+    set('--text-secondary', rgbChannels(vars.inkMuted));
+    set('--border', rgbChannels(vars.inkFaint, 0.4));
+    set('--primary', rgbChannels(vars.primary));
+    set('--info', rgbChannels(vars.secondary));
+    // Re-apply the FolderFrame remap values that depend on --border/--text.
+    set('--ff-glow', mode === 'dark' ? 'rgba(255,255,255,.10)' : 'rgba(128,128,135,.16)');
+    set('--ff-glow-hover', mode === 'dark' ? 'rgba(255,255,255,.22)' : 'rgba(128,128,135,.30)');
+}
+
+window.addEventListener('message', (event) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data;
+    if (data && data.type === 'sdcodex:theme') applyAppTheme(data.theme);
+});
+
 function renderSourceRail() {
     const rail = $('source-rail');
     const list = $('source-rail-list');
     if (!rail || !list) return;
     const sources = galleryConfig?.sources || [];
-    const show = sources.length > 1;
+    // The rail is the only source switcher now, so keep it visible even when
+    // the local disk is the sole source.
+    const show = sources.length >= 1;
     document.body.classList.toggle('has-source-rail', show);
     rail.hidden = !show;
     if (!show) { list.replaceChildren(); return; }
@@ -775,10 +813,10 @@ let operationInFlight = false;
 // deployments that predate the capability endpoint keep the buttons usable;
 // loadOptimizeCapability() turns them off when the server says disabled.
 let optimizeCapable = true;
-// Whether this deployment exposes the Convert endpoint (requires mogrify in
-// the container). Defaults to false because old deployments have no endpoint;
-// loadOptimizeCapability() turns it on when the server advertises it.
-let convertCapable = false;
+// Whether this deployment exposes the Convert endpoint. The gallery backend
+// reports it through /optimize-status; defaults to true so the viewer never
+// hides Convert just because a status probe failed.
+let convertCapable = true;
 let scannedFolders = 0, scannedFiles = 0;
 let mediaLoadId = 0;
 let mediaFailed = false;
@@ -808,6 +846,8 @@ const btnInfoClose = $('btn-info-close');
 const infoFileName = $('info-file-name');
 const infoLoading = $('info-loading');
 const infoCaption = $('info-caption');
+const infoStats = $('info-stats');
+const infoExif = $('info-exif');
 const infoSdPrompt = $('info-sd-prompt');
 const infoSdNegative = $('info-sd-negative');
 const infoSdSetting = $('info-sd-setting');
@@ -884,6 +924,7 @@ const btnCloseVideoError = $('btn-close-video-error');
 window.addEventListener('DOMContentLoaded', async () => {
     await loadConfiguration();
     await loadOptimizeCapability();
+    await loadCaptionCapability();
     setupEventListeners();
     updateControlStates();
     updateFullscreenButton();
@@ -1144,6 +1185,24 @@ function savePreferences() {
     }
 }
 
+// The Caption-this-Image button only makes sense when the captioning plugin
+// is installed, so probe its status endpoint once at startup and reveal the
+// section. A 401/404 means "not installed" and leaves it hidden.
+let captionCapable = false;
+async function loadCaptionCapability() {
+    const section = $('caption-this-section');
+    if (!section) return;
+    try {
+        const response = await fetch('/comfy-caption/api/status', { cache: 'no-store', credentials: 'same-origin' });
+        if (!response.ok) return;
+        const status = await response.json();
+        captionCapable = Boolean(status && status.ok !== false);
+        if (captionCapable) section.hidden = false;
+    } catch (error) {
+        captionCapable = false;
+    }
+}
+
 async function loadOptimizeCapability() {
     try {
         const response = await fetch('/gallery/api/optimize-status', { cache: 'no-store' });
@@ -1196,16 +1255,6 @@ async function loadConfiguration() {
     slideshowPlaying = startupSettings.autoplay;
     applyGridDensity(startupSettings.gridDensity);
 
-    const selector = $('select-source');
-    selector.replaceChildren();
-    galleryConfig.sources.forEach(source => {
-        const option = document.createElement('option');
-        option.value = source.id;
-        option.textContent = source.label;
-        selector.appendChild(option);
-    });
-    selector.value = activeSource.id;
-    $('source-control').hidden = galleryConfig.sources.length < 2;
     renderSourceRail();
     document.querySelectorAll('.configured-source-path').forEach(element => { element.textContent = activeSource.path; });
     warnings.push(...resolved.warnings);
@@ -1435,6 +1484,24 @@ async function captionCurrentImage() {
     }
 }
 
+function renderInfoStats(meta) {
+    const stats = [];
+    if (meta.size || meta.size_fmt) stats.push(['Size', meta.size_fmt || formatBytes(meta.size)]);
+    if (meta.format) stats.push(['Type', meta.format]);
+    if (meta.width && meta.height) stats.push(['Dimensions', `${meta.width} × ${meta.height}`]);
+    if (meta.kind) stats.push(['Kind', meta.kind]);
+    if (stats.length) {
+        infoStats.innerHTML = stats
+            .map(([label, value]) => `<span class="info-stat"><span class="info-stat-label">${label}</span>${value}</span>`)
+            .join('');
+    } else {
+        infoStats.textContent = 'No file details available.';
+    }
+    const exif = meta.exif && typeof meta.exif === 'object' ? meta.exif : {};
+    const rows = Object.entries(exif).filter(([, value]) => value !== '' && value != null);
+    infoExif.textContent = rows.length ? rows.map(([key, value]) => `${key}: ${value}`).join('\n') : 'No EXIF data found.';
+}
+
 function renderInfoMeta(meta) {
     infoLoading.hidden = true;
     infoCaption.textContent = meta.caption || 'No caption found.';
@@ -1443,6 +1510,7 @@ function renderInfoMeta(meta) {
     infoSdSetting.textContent = meta.sdSetting || 'No generation settings found.';
     infoWorkflowSection.hidden = !meta.hasWorkflow;
     btnDownloadWorkflow.hidden = !meta.hasWorkflow;
+    renderInfoStats(meta);
 }
 
 async function loadMediaMetadata(filepath, { force = false } = {}) {
@@ -1514,6 +1582,12 @@ function updateMediaActions(filepath, filename, forceVideo = false) {
     const remote = isRemoteSource();
     btnOptimize.hidden = remote;
     btnConvert.hidden = remote;
+    const captionSection = $('caption-this-section');
+    if (captionSection) {
+        // Captioning writes a .txt sidecar next to the file, so it only works
+        // for local images and only when the captioning plugin is installed.
+        captionSection.hidden = !captionCapable || remote || !isImageFile(filepath) || forceVideo;
+    }
     if (remote) {
         btnOptimize.disabled = true;
         btnOptimize.title = 'Optimize is available for local files only';
@@ -3295,14 +3369,6 @@ function setupEventListeners() {
         updateControlStates();
         await navigateToFolder('');
         savePreferences();
-    });
-    $('select-source').addEventListener('change', event => {
-        const url = new URL(location.href);
-        url.searchParams.set('source', event.target.value);
-        url.searchParams.set('album', '');
-        // A new load prevents old scans, media callbacks, and timers leaking
-        // into the next source. Other explicit URL options are preserved.
-        location.assign(url.href);
     });
     btnShowGrid.addEventListener('click', renderGridView);
     btnRefreshGrid.addEventListener('click', () => loadGallery({ preserveView: true, forceCacheClear: true }));

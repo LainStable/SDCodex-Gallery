@@ -135,9 +135,16 @@ def folderframe_config():
 
 @gallery_bp.get("/optimize-status")
 def optimize_status_compat():
-    # The old gallery UI polls this endpoint while an optimize task is active.
-    # The current optimizer reports progress in its POST response instead.
-    return jsonify({"running": False, "status": "idle"})
+    # The old gallery UI polls this endpoint while an optimize task is active
+    # and reads the capability flags once at startup. Without them the viewer's
+    # Optimize/Convert buttons stay permanently disabled.
+    return jsonify({
+        "running": False,
+        "status": "idle",
+        "enabled": True,
+        "convert": True,
+        "formats": ["jpg", "png", "webp", "gif", "tiff", "bmp"],
+    })
 
 
 @gallery_bp.get("/browse/")
@@ -630,6 +637,55 @@ def get_media_file(relpath):
     return resp
 
 
+# EXIF fields worth surfacing in the viewer's details panel. Everything else
+# (thumbnails, maker notes, orientation dups) is noise.
+EXIF_FIELDS = (
+    "Make", "Model", "LensModel", "DateTimeOriginal", "DateTime", "ExposureTime",
+    "FNumber", "ISOSpeedRatings", "FocalLength", "ExifImageWidth", "ExifImageHeight",
+    "Orientation", "Software", "Artist", "Copyright", "GPSLatitude", "GPSLongitude",
+    "GPSLatitudeRef", "GPSLongitudeRef",
+)
+
+
+def _read_exif(img) -> dict:
+    """Read a small, human-readable EXIF map from an open Pillow image."""
+    try:
+        from PIL.ExifTags import TAGS
+    except Exception:
+        return {}
+    out = {}
+    try:
+        raw = img.getexif()
+    except Exception:
+        return {}
+    if not raw:
+        return {}
+    for tag_id, value in raw.items():
+        name = TAGS.get(tag_id, str(tag_id))
+        if name not in EXIF_FIELDS:
+            continue
+        if isinstance(value, bytes):
+            continue
+        text = str(value).strip()
+        if not text or len(text) > 120:
+            continue
+        out[name] = text
+    # Exposure fields live in the nested Exif IFD on most cameras.
+    try:
+        for tag_id, value in raw.get_ifd(0x8769).items():
+            name = TAGS.get(tag_id, str(tag_id))
+            if name in out or name not in EXIF_FIELDS:
+                continue
+            if isinstance(value, bytes):
+                continue
+            text = str(value).strip()
+            if text and len(text) <= 120:
+                out[name] = text
+    except Exception:
+        pass
+    return out
+
+
 @gallery_bp.get("/meta")
 def get_media_meta():
     req_path = request.args.get("path") or os.path.join(request.args.get("folder", ""), request.args.get("file", ""))
@@ -646,9 +702,12 @@ def get_media_meta():
 
     stat = os.stat(target)
     width, height = 0, 0
+    exif = {}
     try:
         with Image.open(target) as img:
             width, height = img.size
+            if not is_video:
+                exif = _read_exif(img)
     except Exception:
         pass
 
@@ -665,6 +724,7 @@ def get_media_meta():
         "height": height,
         "format": ext,
         "kind": "video" if is_video else "image",
+        "exif": exif,
         "caption": caption,
         "hasCaption": bool(caption),
         "hasSidecar": os.path.isfile(os.path.splitext(target)[0] + ".txt"),

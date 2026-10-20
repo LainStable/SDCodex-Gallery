@@ -169,10 +169,6 @@
                         <span id="current-path-separator" class="crumb-separator" aria-hidden="true" hidden>›</span>
                         <span id="grid-path" class="folder-path">Sorted by folder</span>
                     </div>
-                    <div id="source-control" class="timer-control" hidden>
-                        <label for="select-source">Source:</label>
-                        <select id="select-source" class="custom-select"></select>
-                    </div>
                 </div>
                 <div class="header-right grid-actions ff-header-right ff-pill">
                     <span id="grid-view-mode-slot" class="grid-action-slot">
@@ -319,6 +315,10 @@
                 <button id="btn-caption-this" class="caption-this-btn" type="button" aria-label="Caption this image"><span id="caption-this-label">Caption this Image</span></button>
                 <div id="caption-this-status" class="info-text" style="display:none;"></div>
             </div>
+            <div class="info-section-title">File</div>
+            <div id="info-stats" class="info-stats"></div>
+            <div class="info-section-title">EXIF</div>
+            <div id="info-exif" class="info-text info-exif"></div>
             <div id="info-error" class="info-error" hidden></div>
             <style>
                 #info-panel { position:absolute; top:64px; right:0; bottom:0; width:min(360px, 40vw);
@@ -338,6 +338,12 @@
                 #info-panel .info-loading { color:#888; font-size:12px; padding-top:8px; }
                 #info-panel .info-error { color:#e06565; font-size:12px; margin-top:12px; }
                 #info-panel .info-workflow-section button { margin-top:6px; }
+                #info-panel .info-stats { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+                #info-panel .info-stat { display:inline-flex; gap:6px; align-items:baseline;
+                    background:#1c1c1c; border:1px solid #333; border-radius:4px;
+                    padding:2px 8px; font-family:ui-monospace, monospace; font-size:12px; color:#e6e6e6; }
+                #info-panel .info-stat-label { color:#8b8b8b; text-transform:uppercase; font-size:10px; letter-spacing:.4px; }
+                #info-panel .info-exif { color:#9a9a9a; font-family:ui-monospace, monospace; font-size:12px; }
             </style>
         </aside>
     </div>
@@ -345,6 +351,6 @@
     <p id="config-notice" role="status" hidden></p>
     <script src="/gallery/api/legacy-ui/resilience.js?v=20260831-native-decode-queue"></script>
     <script src="/gallery/api/legacy-ui/settings.js?v=20260904-manifest-refresh-default"></script>
-    <script src="/gallery/api/legacy-ui/app.js?v=20261018-immich"></script>
+    <script src="/gallery/api/legacy-ui/app.js?v=20261020-theme-bridge"></script>
 </body>
 </html>
