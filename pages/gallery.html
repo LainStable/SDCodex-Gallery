@@ -328,14 +328,41 @@
             <div id="info-exif" class="info-text info-exif"></div>
             <div id="info-error" class="info-error" hidden></div>
             <style>
-                #info-panel { position:absolute; top:64px; right:0; bottom:0; width:min(360px, 40vw);
-                    background:var(--card-bg, #181b25); color:var(--text, #dfe2ef); overflow:auto; z-index:200;
-                    box-shadow:0 0 22px rgba(0,0,0,.6); border-left:1px solid var(--border, rgba(255,255,255,.1));
-                    padding:14px 16px; font-family:inherit; }
+                #info-panel, #gallery-wrapper.viewer-open #info-panel {
+                    position: fixed;
+                    top: 12px;
+                    right: max(20px, calc(50vw - 820px));
+                    bottom: 12px;
+                    width: var(--gallery-info-w, 360px);
+                    background: var(--card-bg, #181b25) !important;
+                    color: var(--text, #dfe2ef) !important;
+                    overflow: auto;
+                    z-index: 2001;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+                    border: 1px solid var(--border, rgba(255, 255, 255, .1)) !important;
+                    border-radius: 12px !important;
+                    padding: 16px 18px 28px;
+                    font-family: inherit;
+                }
                 #info-panel .info-panel-head { display:flex; justify-content:space-between; align-items:center; }
                 #info-panel .info-panel-title { font-size:15px; font-weight:600; letter-spacing:.3px; color:var(--text, #fff); }
-                #info-panel button { background:rgba(255,255,255,.05); color:var(--text, #eee); border:1px solid var(--border, rgba(255,255,255,.15)); border-radius:6px; cursor:pointer; }
-                #info-panel button:hover:not(:disabled) { background:rgba(255,255,255,.1); color:#fff; }
+                #info-panel button, #info-panel .btn, #info-panel .caption-this-btn {
+                    background: transparent !important;
+                    color: var(--text-secondary, #c7c4d7) !important;
+                    border: 1px solid var(--border, rgba(255, 255, 255, .15)) !important;
+                    border-radius: 4px !important;
+                    cursor: pointer;
+                    transition: all .15s ease;
+                }
+                #info-panel button:hover:not(:disabled), #info-panel .btn:hover:not(:disabled), #info-panel .caption-this-btn:hover:not(:disabled) {
+                    background: rgba(255, 255, 255, .08) !important;
+                    border-color: rgba(255, 255, 255, .25) !important;
+                    color: #fff !important;
+                }
+                #info-panel button:disabled { opacity: .4 !important; cursor: not-allowed; }
+                #info-panel .info-panel-head #btn-info-close {
+                    width: 28px; height: 28px; min-width: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+                }
                 #info-panel .info-section-title { margin-top:14px; font-size:10px; font-weight:700; text-transform:uppercase;
                     letter-spacing:.6px; color:var(--text-secondary, #908fa0); }
                 #info-panel .info-text { margin-top:4px; white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.4; color:var(--text, #dfe2ef); }
@@ -351,7 +378,7 @@
                     background:rgba(255,255,255,.04); border:1px solid var(--border, rgba(255,255,255,.1)); border-radius:4px;
                     padding:3px 8px; font-family:ui-monospace, monospace; font-size:11px; color:var(--text, #dfe2ef); }
                 #info-panel .info-stat-label { color:var(--text-secondary, #908fa0); text-transform:uppercase; font-size:9px; letter-spacing:.4px; }
-                #info-panel .info-exif { color:var(--text-secondary, #c7c4d7); font-family:ui-monospace, monospace; font-size:11px; background:rgba(0,0,0,.2); padding:8px; border-radius:4px; border:1px solid var(--border, rgba(255,255,255,.08)); }
+                #info-panel .info-exif { color:var(--text-secondary, #c7c4d7); font-family:ui-monospace, monospace; font-size:11px; background:rgba(0,0,0,.25); padding:10px; border-radius:4px; border:1px solid var(--border, rgba(255,255,255,.08)); white-space:pre-wrap; word-break:break-word; margin-bottom:16px; }
             </style>
         </aside>
     </div>

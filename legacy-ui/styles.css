@@ -1390,13 +1390,13 @@ dialog,
     right: var(--ff-shell-inset-x, 14px);
     bottom: var(--ff-shell-gap, 12px);
     width: min(380px, 42vw);
-    background: rgba(15, 15, 15, .78);
-    backdrop-filter: blur(12px);
+    background: var(--card-bg, #181b25);
+    backdrop-filter: blur(16px);
     z-index: 200;
-    border-radius: 16px;
+    border-radius: 12px;
     border: 1px solid var(--border);
-    box-shadow: 0 8px 26px var(--shadow-soft, rgba(0,0,0,.4));
-    padding: 16px 18px;
+    box-shadow: 0 8px 32px var(--shadow-soft, rgba(0,0,0,.5));
+    padding: 16px 18px 28px;
     font-family: inherit;
     transition: opacity .35s ease;
     opacity: 1;
@@ -1413,27 +1413,46 @@ dialog,
     letter-spacing: .3px;
     color: var(--text);
 }
-#info-panel .btn {
-    background: var(--card-bg);
+#info-panel .btn,
+#info-panel button {
+    background: transparent;
     color: var(--text-secondary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s ease;
 }
-#info-panel .btn:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+#info-panel .btn:hover:not(:disabled),
+#info-panel button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+#info-panel button:disabled { opacity: .4; cursor: not-allowed; }
+#info-panel .info-panel-head #btn-info-close {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 #info-panel .info-section-title {
-    margin-top: 12px;
-    font-size: 11px;
-    font-weight: 600;
+    margin-top: 14px;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .5px;
+    letter-spacing: .6px;
     color: var(--text-secondary);
 }
 #info-panel .info-text {
     margin-top: 4px;
     white-space: pre-wrap;
     word-break: break-word;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.4;
+    color: var(--text);
 }
 #info-panel .info-caption { color: var(--text); }
 #info-panel .info-sd { color: var(--text-secondary); font-style: italic; }
@@ -1449,18 +1468,25 @@ dialog,
     align-items: center;
     justify-content: center;
     gap: 6px;
-    margin-top: 12px;
+    margin-top: 8px;
     width: 100%;
-    height: 38px;
-    background: var(--card-bg);
+    height: 32px;
+    background: transparent;
     color: var(--text-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s ease;
 }
-#info-panel .caption-this-btn:hover:not(:disabled) { background: var(--bg); color: var(--text); }
-#info-panel .caption-this-btn:disabled { opacity: .55; }
-#info-panel .info-text#caption-this-status { margin-top: 4px; font-size: 12px; }
+#info-panel .caption-this-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+#info-panel .caption-this-btn:disabled { opacity: .4; cursor: not-allowed; }
+#info-panel .info-text#caption-this-status { margin-top: 4px; font-size: 11px; }
 
 /* ── Utility icons used by the de-branded controls ───────────────────────── */
 .ff-back-icon, .ff-brand-icon { line-height: 1; }
@@ -1541,15 +1567,15 @@ dialog,
     right: max(20px, calc(50vw - 820px));
     bottom: 12px;
     width: var(--gallery-info-w, 360px);
-    background: rgba(15, 15, 15, .78);
-    backdrop-filter: blur(12px);
-    color: var(--text);
+    background: var(--card-bg, #181b25);
+    backdrop-filter: blur(16px);
+    color: var(--text, #dfe2ef);
     overflow: auto;
     z-index: 2001;
     border: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    border-radius: 20px 20px 20px 20px;
-    padding: 16px 18px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    padding: 16px 18px 28px;
 }
 
 /* Viewer toolbar stays inside the media column of the card. Slim: smaller

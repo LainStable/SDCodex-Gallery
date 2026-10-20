@@ -488,9 +488,9 @@ function renderSourceRail() {
             sources: sources
         }, window.location.origin);
     } catch (e) {}
-    // The rail is the only source switcher now, so keep it visible even when
-    // the local disk is the sole source.
-    const show = sources.length >= 1;
+    // In SDCodex, the outer sidebar hosts the sources rail; do not render it inside the iframe view.
+    const inIframe = Boolean(window.parent && window.parent !== window);
+    const show = !inIframe && sources.length >= 1;
     document.body.classList.toggle('has-source-rail', show);
     rail.hidden = !show;
     if (!show) { list.replaceChildren(); return; }
