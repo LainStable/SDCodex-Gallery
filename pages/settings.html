@@ -50,7 +50,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
         <label class="text-[10px] uppercase text-outline block mb-1">Active Root Path (Direct IO)</label>
         <div class="flex items-center gap-2">
           <input id="cfg-root" type="text" class="flex-1 rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-white focus:outline-none focus:border-badge-checkpoint" readonly/>
-          <button id="btn-status-refresh" class="px-3 py-2 rounded-lg bg-surface-container-high hover:bg-slate-surface border border-outline-variant/40 text-on-surface flex items-center gap-1.5">
+          <button id="btn-status-refresh" class="sd-btn">
             <span class="material-symbols-outlined text-[16px]">refresh</span>
             <span>Check</span>
           </button>
@@ -116,11 +116,11 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
             Allow a self-signed certificate
           </label>
           <div class="flex items-center gap-2">
-            <button id="immich-save" type="submit" class="px-3 py-2 rounded-lg bg-badge-checkpoint/20 hover:bg-badge-checkpoint/30 text-primary border border-badge-checkpoint/40 flex items-center gap-1.5">
+            <button id="immich-save" type="submit" class="sd-btn sd-btn-primary">
               <span class="material-symbols-outlined text-[16px]">add</span>
               <span id="immich-save-label">Add server</span>
             </button>
-            <button id="immich-cancel" type="button" hidden class="px-3 py-2 rounded-lg bg-surface-container-high hover:bg-slate-surface border border-outline-variant/40 text-on-surface">Cancel</button>
+            <button id="immich-cancel" type="button" hidden class="sd-btn">Cancel</button>
             <span id="immich-status" class="text-[11px] text-outline"></span>
           </div>
         </div>
@@ -140,7 +140,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
           <span class="text-white block font-semibold">Direct Inode Cache</span>
           <span class="text-outline text-[11px]">Keep image dimensions and metadata cached in memory to speed up browsing.</span>
         </div>
-        <button id="btn-clear-cache" class="px-3 py-1.5 rounded bg-surface-container-high hover:bg-slate-surface text-primary border border-outline-variant/40">
+        <button id="btn-clear-cache" class="sd-btn sd-btn-sm">
           Clear Cache
         </button>
       </div>
