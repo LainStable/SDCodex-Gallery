@@ -619,25 +619,29 @@ def format_bytes(n):
 def gallery_status():
     root = resolve_browse_root()
     exists = os.path.isdir(root)
-    total_files = 0
-    total_dirs = 0
-    if exists:
-        try:
-            for _, dirs, files in os.walk(root):
-                total_dirs += len(dirs)
-                for f in files:
-                    ext = os.path.splitext(f)[1].lower()
-                    if ext in MEDIA_EXTENSIONS:
-                        total_files += 1
-        except Exception:
-            pass
-    return jsonify({
+    payload = {
         "root": root,
         "exists": exists,
-        "total_files": total_files,
-        "total_folders": total_dirs,
         "writable": os.access(root, os.W_OK) if exists else False,
-    })
+    }
+    # Counting walks the whole library; consumers that only need the root
+    # (plugin folder pickers call this on every browse) must stay cheap.
+    if request.args.get("counts") in ("1", "true", "yes"):
+        total_files = 0
+        total_dirs = 0
+        if exists:
+            try:
+                for _, dirs, files in os.walk(root):
+                    total_dirs += len(dirs)
+                    for f in files:
+                        ext = os.path.splitext(f)[1].lower()
+                        if ext in MEDIA_EXTENSIONS:
+                            total_files += 1
+            except Exception:
+                pass
+        payload["total_files"] = total_files
+        payload["total_folders"] = total_dirs
+    return jsonify(payload)
 
 
 @gallery_bp.get("/folders")

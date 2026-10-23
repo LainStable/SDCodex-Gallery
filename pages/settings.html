@@ -166,7 +166,7 @@ tailwind.config = { darkMode: "class", theme: { extend: { colors: {
 
   async function load() {
     try {
-      const res = await fetch('/gallery/api/status');
+      const res = await fetch('/gallery/api/status?counts=1');
       if (res.ok) {
         const d = await res.json();
         rootInput.value = d.root || '';

@@ -1,7 +1,7 @@
 {
   "id": "gallery",
   "name": "gallery",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Disk-backed media gallery and workflow inspector. Scans folders directly, reads captions/.txt sidecars, SD prompts, and ComfyUI workflows from image metadata.",
   "author": "LainStable",
   "repository": "https://github.com/LainStable/SDCodex-Gallery",
@@ -28,7 +28,7 @@
       "name": "scan_status",
       "description": "Report gallery status for the configured media root (counts, optimize state).",
       "method": "GET",
-      "path": "/gallery/api/status"
+      "path": "/gallery/api/status?counts=1"
     },
     {
       "name": "rescan_library",
