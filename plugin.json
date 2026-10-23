@@ -6,13 +6,7 @@
   "author": "LainStable",
   "repository": "https://github.com/LainStable/SDCodex-Gallery",
   "icon": "photo_library",
-  "nav_items": [
-    {
-      "label": "Browser",
-      "icon": "photo_library",
-      "page": "gallery"
-    }
-  ],
+  "nav_items": [],
   "settings": [
     {
       "label": "Gallery",
