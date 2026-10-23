@@ -8,7 +8,7 @@ import re
 import tempfile
 import time
 import zipfile
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 from flask import Blueprint, Response, jsonify, request, send_file, send_from_directory
 from PIL import Image, ImageSequence
 
@@ -162,6 +162,178 @@ def folderframe_browse(relpath=""):
         response.headers["Content-Disposition"] = "inline"
         return response
     return "Not found", 404
+
+
+# --------------------------------------------------------------------------- #
+#  Shared disk picker (embedded by AI Renamer / ComfyCaption)
+#
+#  Same "browse folders and images live from disk" experience as this gallery,
+#  exposed as a small standalone page so other plugin pages can reuse it
+#  instead of growing their own picker. The page lives at
+#  /api/plugins/gallery/page/picker and posts the choice back to its parent:
+#      { type: "sdcodex:pick", path: "<absolute folder>", file: "<name|null>" }
+# --------------------------------------------------------------------------- #
+
+PICKER_IMAGE_EXTENSIONS = IMAGE_EXTENSIONS
+_PICKER_WALK_LIMIT = 4000
+
+
+def _picker_root(raw):
+    """Resolve a picker root (absolute folder), defaulting to the gallery root.
+
+    The app is single-user and already serves arbitrary paths through the
+    core's /api/files endpoint, so any readable directory is allowed — the
+    plugin pages' own folder boxes accept typed absolute paths too.
+    """
+    value = unquote(raw or "").strip().strip("\"'")
+    root = os.path.abspath(os.path.expanduser(value)) if value else resolve_browse_root()
+    return root
+
+
+def _picker_roots(current):
+    """Quick-pick roots: the gallery/downloads roots plus the caller's root."""
+    out = []
+    seen = set()
+
+    def add(path, label):
+        if not path or not os.path.isdir(path):
+            return
+        real = os.path.realpath(path)
+        if real in seen:
+            return
+        seen.add(real)
+        out.append({"path": os.path.abspath(path), "label": label})
+
+    add(resolve_browse_root(), "Gallery")
+    add(os.environ.get("AI_RENAMER_ROOT") or "/data/downloads", "Downloads")
+    add(os.environ.get("MODELS_DIR") or "/models", "Models")
+    add(current, "Current")
+    return out
+
+
+def _picker_count(target):
+    """Cheap image count: direct files, plus a bounded recursive walk."""
+    count = 0
+    try:
+        for entry in os.scandir(target):
+            if entry.is_file(follow_symlinks=False):
+                if os.path.splitext(entry.name)[1].lower() in PICKER_IMAGE_EXTENSIONS:
+                    count += 1
+    except OSError:
+        return 0
+    if count:
+        return count
+    try:
+        for sub_root, dirs, files in os.walk(target):
+            dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("__pycache__", "node_modules")]
+            for name in files:
+                if os.path.splitext(name)[1].lower() in PICKER_IMAGE_EXTENSIONS:
+                    count += 1
+                    if count >= _PICKER_WALK_LIMIT:
+                        return count
+    except OSError:
+        pass
+    return count
+
+
+def _picker_join(root, rel):
+    rel = (rel or "").strip("/\\")
+    target = os.path.abspath(os.path.join(root, rel)) if rel else os.path.abspath(root)
+    if not is_safe_path(root, target):
+        return None, rel
+    return target, rel.replace(os.sep, "/")
+
+
+def _picker_rel(root, target):
+    rel = os.path.relpath(target, root)
+    return "" if rel == "." else rel.replace(os.sep, "/")
+
+
+@gallery_bp.get("/picker/list")
+def picker_list():
+    root = _picker_root(request.args.get("root"))
+    if not os.path.isdir(root):
+        return jsonify({"error": f"Folder does not exist: {root}"}), 400
+    target, rel = _picker_join(root, unquote(request.args.get("path", "")))
+    if target is None or not os.path.isdir(target):
+        return jsonify({"error": "Folder not found"}), 404
+
+    folders, images = [], []
+    try:
+        entries = sorted(
+            os.scandir(target),
+            key=lambda entry: (not entry.is_dir(follow_symlinks=False), entry.name.casefold()),
+        )
+    except OSError as error:
+        return jsonify({"error": str(error)}), 403
+
+    for entry in entries:
+        if entry.name.startswith("."):
+            continue
+        child_rel = f"{rel}/{entry.name}" if rel else entry.name
+        try:
+            if entry.is_dir(follow_symlinks=False):
+                if entry.name in ("__pycache__", "node_modules"):
+                    continue
+                folders.append(
+                    {"name": entry.name, "path": child_rel, "count": _picker_count(entry.path)}
+                )
+            elif entry.is_file(follow_symlinks=False):
+                if os.path.splitext(entry.name)[1].lower() not in PICKER_IMAGE_EXTENSIONS:
+                    continue
+                images.append(
+                    {
+                        "name": entry.name,
+                        "path": child_rel,
+                        "size": entry.stat().st_size,
+                        "url": f"/gallery/api/picker/file?root={quote(root)}&path={quote(child_rel)}&w=360",
+                    }
+                )
+        except OSError:
+            continue
+
+    parent = None if not rel else "/".join(rel.split("/")[:-1])
+    return jsonify(
+        {
+            "root": root,
+            "path": rel,
+            "parent": parent,
+            "roots": _picker_roots(root),
+            "folders": folders[:400],
+            "images": images[:600],
+        }
+    )
+
+
+@gallery_bp.get("/picker/file")
+def picker_file():
+    root = _picker_root(request.args.get("root"))
+    target, _ = _picker_join(root, unquote(request.args.get("path", "")))
+    if target is None or not os.path.isfile(target):
+        return jsonify({"error": "File not found"}), 404
+    try:
+        width = int(request.args.get("w", "0"))
+    except ValueError:
+        width = 0
+    if width > 0:
+        try:
+            with Image.open(target) as img:
+                img.load()
+                img.thumbnail((width, width))
+                if img.mode not in ("RGB", "RGBA"):
+                    img = img.convert("RGB")
+                buffer = io.BytesIO()
+                img.save(buffer, format="WEBP", quality=82, method=4)
+            buffer.seek(0)
+            response = send_file(buffer, mimetype="image/webp", max_age=300)
+            response.headers["Content-Disposition"] = "inline"
+            return response
+        except Exception:
+            pass  # undecodable — fall through to the original bytes
+    mime, _ = mimetypes.guess_type(target)
+    response = send_file(target, mimetype=mime or "application/octet-stream", conditional=True)
+    response.headers["Content-Disposition"] = "inline"
+    return response
 
 
 def _workspace_root():
